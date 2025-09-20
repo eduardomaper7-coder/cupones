@@ -1,0 +1,314 @@
+<!--
+QR-Cupones-Juego-de-Cartas.html
+Descripción: Página HTML autónoma que implementa un juego de 3 cartas para revelar cupones de forma aleatoria.
+Uso recomendado:
+ - Genere QRs que apunten a: https://tudominio.com/game.html?token=UNIQUE_TOKEN
+ - El token debe mapear en el servidor a una sesión/visitante. Idealmente, el servidor devuelve (una sola vez) cuál cupón ganó el usuario y marca el token como usado.
+ - Si no tienes servidor, el archivo incluye una opción *local* (sin seguridad) para pruebas.
+
+Incluye también, más abajo en este mismo archivo (en bloques de código), un ejemplo de backend en Node.js/Express para manejar tokens y asignar cupones de forma segura.
+-->
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Juego de Cartas — Cupón Aleatorio</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#f59e0b;--glass: rgba(255,255,255,0.04)}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+    body{background:linear-gradient(180deg,#071426 0%, #092435 100%);display:flex;align-items:center;justify-content:center;color:#e6eef8}
+    .container{max-width:980px;padding:28px;width:100%}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .sub{color:#9fb0c8;font-size:13px}
+
+    .game{background:var(--card);border-radius:14px;padding:22px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    .row{display:flex;gap:18px;align-items:center}
+
+    .cards{display:flex;gap:14px;justify-content:center;padding:26px}
+    .card{width:140px;height:200px;perspective:1200px;cursor:pointer}
+    .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 700ms cubic-bezier(.2,.9,.3,1)}
+    .card.flipped .inner{transform:rotateY(180deg)}
+    .face{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;box-shadow:0 8px 18px rgba(2,6,23,0.5)}
+    .front{background:linear-gradient(180deg,#12304a,#0b2a3f);border:2px solid rgba(255,255,255,0.03);}
+    .front .label{font-size:14px;color:#bfe0ff}
+    .back{transform:rotateY(180deg);background:linear-gradient(180deg,#fff,#f6f7ff);color:#082032;padding:12px;flex-direction:column}
+
+    .coupon{background:var(--glass);padding:12px;border-radius:10px; width:100%;text-align:center}
+    .coupon code{display:block;margin-top:6px;padding:6px;border-radius:6px;background:rgba(0,0,0,0.06);font-weight:600}
+
+    .controls{display:flex;gap:10px;justify-content:center;margin-top:12px}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+
+    .info{margin-top:14px;color:#98adc6;font-size:13px;text-align:center}
+    .small{font-size:12px;color:#8ea5bf}
+
+    /* responsive */
+    @media (max-width:560px){.cards{gap:10px}.card{width:110px;height:160px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Gira la carta y gana un cupón 🎉</h1>
+        <div class="sub">Escanea el QR → abre esta página → juega y descubre tu premio</div>
+      </div>
+      <div class="small">Hecho por: Tu equipo</div>
+    </header>
+
+    <section class="game">
+      <div class="row">
+        <div style="flex:1">
+          <p class="info">Pulsa una carta para voltearla. Solo se revelará un cupón por token (si configuras servidor).</p>
+        </div>
+        <div style="width:280px;text-align:right">
+          <div id="status" class="small">Estado: <strong id="statusText">Esperando</strong></div>
+        </div>
+      </div>
+
+      <div class="cards" id="cards">
+        <div class="card" data-index="0" role="button" tabindex="0">
+          <div class="inner">
+            <div class="face front"><div class="label">Carta</div></div>
+            <div class="face back" aria-hidden="true"><div class="coupon" id="coupon0">?</div></div>
+          </div>
+        </div>
+        <div class="card" data-index="1" role="button" tabindex="0">
+          <div class="inner">
+            <div class="face front"><div class="label">Carta</div></div>
+            <div class="face back" aria-hidden="true"><div class="coupon" id="coupon1">?</div></div>
+          </div>
+        </div>
+        <div class="card" data-index="2" role="button" tabindex="0">
+          <div class="inner">
+            <div class="face front"><div class="label">Carta</div></div>
+            <div class="face back" aria-hidden="true"><div class="coupon" id="coupon2">?</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="resetBtn" class="secondary">Reiniciar</button>
+        <button id="claimBtn">Reclamar</button>
+      </div>
+      <div class="info" id="messageArea">Sigue las instrucciones: pulsa una carta.</div>
+    </section>
+  </div>
+
+  <script>
+    /* ---------- CONFIG ---------- */
+    // Si tienes un backend seguro, actívalo poniéndolo en true y ajustando ENDPOINT
+    const USE_SERVER = true; // Cambia a false para pruebas locales
+    const ENDPOINT = '/api/redeem'; // POST { token } -> { success:true, index:1, coupon:{code,desc} }
+
+    // Si USE_SERVER=false, se usará esta lista local (para pruebas).
+    const LOCAL_COUPONS = [
+      {code: '10OFF-GEN', desc: '10% descuento'},
+      {code: 'ENVIO-GRATIS', desc: 'Envío gratis'},
+      {code: '5EUR-REGALO', desc: '5€ de descuento'}
+    ];
+
+    /* ---------- LOGICA ---------- */
+    const urlParams = new URLSearchParams(location.search);
+    const token = urlParams.get('token') || null; // token viene del QR
+
+    const cardsEl = document.getElementById('cards');
+    const statusText = document.getElementById('statusText');
+    const messageArea = document.getElementById('messageArea');
+    const claimBtn = document.getElementById('claimBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let assignedIndex = null; // cuál carta contiene el cupón ganador (0..2)
+    let revealed = [false,false,false];
+    let couponData = [null,null,null];
+    let used = false;
+
+    async function init(){
+      statusText.textContent = token ? 'Token detectado' : 'Sin token (modo demo)';
+      if (USE_SERVER){
+        if (!token){
+          statusText.textContent = 'ERROR: falta token en la URL';
+          messageArea.textContent = 'Escanea el QR correcto o configura el token.';
+          return;
+        }
+        // llamar al servidor para pedir asignación
+        try{
+          statusText.textContent = 'Consultando servidor...';
+          const res = await fetch(ENDPOINT, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+          const data = await res.json();
+          if (!data || !data.success){
+            statusText.textContent = 'Token inválido o ya usado';
+            messageArea.textContent = data && data.message ? data.message : 'No se pudo obtener un cupón.';
+            return;
+          }
+          assignedIndex = data.index; // índice entre 0..2
+          couponData[assignedIndex] = data.coupon;
+          // rellenar las otras cartas con mensajes genéricos (no premiadas)
+          for (let i=0;i<3;i++) if (i!==assignedIndex) couponData[i] = {code:'GRACIAS',desc:'Sigue intentando'};
+          statusText.textContent = 'Listo para jugar';
+          messageArea.textContent = 'Pulsa una carta para voltearla.';
+        }catch(err){
+          console.error(err);
+          statusText.textContent = 'Error de red';
+          messageArea.textContent = 'No se pudo conectar con el servidor.';
+        }
+      }else{
+        // Modo local: asignar al azar y mezclar
+        assignedIndex = Math.floor(Math.random()*3);
+        couponData[assignedIndex] = LOCAL_COUPONS[Math.floor(Math.random()*LOCAL_COUPONS.length)];
+        for (let i=0;i<3;i++) if (i!==assignedIndex) couponData[i] = {code:'GRACIAS',desc:'Lo sentimos — no ganado'};
+        statusText.textContent = 'Modo demo';
+        messageArea.textContent = 'Pulsa una carta para voltearla.';
+      }
+
+      // escribir las tarjetas (oculto hasta que se revele cada una)
+      for (let i=0;i<3;i++){
+        const el = document.getElementById('coupon'+i);
+        el.innerHTML = `<strong>${couponData[i].desc}</strong><code>${couponData[i].code}</code>`;
+      }
+    }
+
+    cardsEl.addEventListener('click', async (ev)=>{
+      const card = ev.target.closest('.card');
+      if (!card) return;
+      const idx = Number(card.dataset.index);
+      if (used) return;
+      if (revealed[idx]) return;
+
+      // permite voltear solo una carta (la primera que abra)
+      card.classList.add('flipped');
+      revealed[idx]=true;
+
+      if (idx===assignedIndex){
+        messageArea.textContent = `¡Felicidades! Has ganado: ${couponData[idx].desc}`;
+        used = true;
+        // show confetti
+        launchConfetti();
+      } else {
+        messageArea.textContent = 'No es la carta ganadora. Intenta con otra.';
+      }
+
+      // si todas las cartas están reveladas, bloquear
+      if (revealed.every(Boolean)) used=true;
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      document.querySelectorAll('.card').forEach(c=>{c.classList.remove('flipped')});
+      revealed=[false,false,false]; used=false; messageArea.textContent='Pulsa una carta para voltearla.';
+    });
+
+    claimBtn.addEventListener('click', async ()=>{
+      if (!used && !revealed.some(Boolean)){
+        messageArea.textContent = 'Primero voltea una carta para descubrir si ganaste.'; return;
+      }
+      // anuncia reclamo: si el servidor asignó coupon, deberíamos llamar /api/claim para marcarlo como reclamado
+      if (USE_SERVER){
+        try{
+          const res = await fetch('/api/claim', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+          const data = await res.json();
+          if (data.success){
+            messageArea.textContent = 'Cupón reclamado correctamente. Revisa tu email o la sección Mis Cupones.';
+          } else {
+            messageArea.textContent = data.message || 'No se pudo reclamar.';
+          }
+        }catch(e){ messageArea.textContent='Error al reclamar.' }
+      } else {
+        messageArea.textContent = 'Modo demo: tu cupón sería mostrado aquí. Para producción, conecta con /api/claim.';
+      }
+    });
+
+    // simple confetti (canvas) — sin librerías externas
+    function launchConfetti(){
+      const count = 24;
+      for (let i=0;i<count;i++){
+        const el = document.createElement('div');
+        document.body.appendChild(el);
+        el.style.position='fixed'; el.style.left=(50+Math.random()*400-200)+'px'; el.style.top='40vh'; el.style.width='8px'; el.style.height='12px';
+        el.style.background='rgba(245,158,11,'+(0.6+Math.random()*0.4)+')'; el.style.transform='rotate('+Math.random()*360+'deg)';
+        el.style.zIndex=9999; el.style.borderRadius='2px';
+        const dx = (Math.random()-0.5)*200; const dy = -350 - Math.random()*200; const rot = Math.random()*720;
+        el.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(${rot}deg)`,opacity:0}],{duration:1200+Math.random()*600, easing:'cubic-bezier(.2,.8,.2,1)'});
+        setTimeout(()=>el.remove(),2000);
+      }
+    }
+
+    // inicializar al cargar
+    init();
+  </script>
+
+  <!--
+  ------------------- EJEMPLO DE BACKEND (Node.js + Express) -------------------
+  Guárdalo en server/index.js. Este ejemplo ilustra cómo asignar un cupón aleatorio y marcar tokens usados.
+  En producción: usa HTTPS, persistencia (Redis o base de datos), rate limiting, validación y logs.
+  -------------------------------------------------------------------------------
+  -->
+
+  <!--
+  // server/index.js
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const app = express();
+  app.use(bodyParser.json());
+
+  // Ejemplo simple en memoria (NO para producción)
+  const tokens = { /* 'TOKEN123': {used:false, userId: 'abc'} */ };
+  const coupons = [
+    {code:'10OFF-2025',desc:'10% descuento'},
+    {code:'FREESHIP-2025',desc:'Envío gratis'},
+    {code:'5EURO-2025',desc:'5€ de descuento'}
+  ];
+
+  // endpoint para simular creación de tokens - en real lo generas cuando imprimes el QR
+  app.post('/api/create-token', (req,res)=>{
+    const t = 'T'+Math.random().toString(36).slice(2,10).toUpperCase();
+    tokens[t] = {used:false, createdAt:Date.now()};
+    res.json({token:t});
+  });
+
+  // /api/redeem -> asigna (una sola vez) el índice ganador
+  app.post('/api/redeem', (req,res)=>{
+    const {token} = req.body;
+    if (!token || !tokens[token]) return res.json({success:false,message:'Token inválido'});
+    if (tokens[token].used) return res.json({success:false,message:'Token ya usado'});
+
+    // asignar índice aleatorio y un cupón (podrías usar pesos/probabilidades aquí)
+    const index = Math.floor(Math.random()*3);
+    const coupon = coupons[Math.floor(Math.random()*coupons.length)];
+
+    // guardar la asignación en memoria
+    tokens[token].used = true;
+    tokens[token].assigned = {index, coupon};
+
+    return res.json({success:true,index,coupon});
+  });
+
+  // /api/claim -> marca reclamado y devuelve instrucciones (email, código, etc)
+  app.post('/api/claim',(req,res)=>{
+    const {token} = req.body;
+    if (!token || !tokens[token] || !tokens[token].assigned) return res.json({success:false,message:'No hay cupón asociado'});
+    // marcar como reclamado permanentemente (ejemplo simple)
+    tokens[token].claimed = true;
+    return res.json({success:true,message:'Cupón reclamado: ' + tokens[token].assigned.coupon.code});
+  });
+
+  app.listen(3000, ()=>console.log('API en http://localhost:3000'));
+  -->
+
+  <!--
+  ------------------- RECOMENDACIONES Y BUENAS PRÁCTICAS -------------------
+  1) Seguridad / fraude: Genera tokens largos y únicos (UUID v4 o strings 20+ chars), marca como usados en servidor.
+  2) Probabilidades: Si quieres que algunos premios sean raros, asigna pesos (p.ej. 70% GRACIAS, 25% 5% off, 5% 50% off).
+  3) Anti-bot: Limita redemptions por IP y usa CAPTCHA si detectas abuso.
+  4) Privacidad: Si recoges emails, cumpla GDPR y solicita consentimiento. Evita almacenar datos innecesarios.
+  5) Monitorización: Registra token, fecha, IP, user-agent para análisis y detección de fraudes.
+  6) QR: Genera QRs que apunten a URL con token. Puedes usar librerías: qrcode (node), qrcode.js (cliente), o servicios externos.
+  7) Experiencia: Añade sonido/animación, y un modal con el cupón y botón "Usar ahora" que abre el checkout con el cupón aplicado.
+
+  ------------------- FIN -------------------
+  -->
+</body>
+</html>
