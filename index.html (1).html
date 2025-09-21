@@ -137,7 +137,14 @@
     });
 
     $('#next',root).addEventListener('click',()=>{ state.step=1; setProgress(); screenWheel(); });
-    setProgress(); return mount(root);
+    setProgress();
+
+    // TESTS de pantalla cartas
+    setTimeout(()=>{
+      console.assert(document.querySelectorAll('.card').length===6, 'Test: deben existir 6 cartas');
+    }, 0);
+
+    return mount(root);
   }
 
   function sequenceBigRewards(done){
@@ -194,6 +201,10 @@
     function canSpin(){ const ok = state.coins>=500; warn.style.display = ok? 'none':'block'; spinBtn.disabled=!ok; return ok; }
     canSpin(); setStats(); setProgress();
 
+    // TEST: al entrar, debería estar deshabilitado si coins < 500
+    console.assert(spinBtn.disabled===true, 'Test: botón spin deshabilitado si coins < 500');
+    console.assert(getComputedStyle(wheel).backgroundImage.includes('conic-gradient'), 'Test: la rueda usa conic-gradient');
+
     let spinning=false; let angle=0;
 
     function doSpin(){
@@ -228,25 +239,39 @@
       });
     }
 
+    // TEST: etiquetas renderizadas
+    setTimeout(()=>{
+      console.assert(labels.children.length===PRIZES.length, 'Test: número de etiquetas = número de premios');
+    },0);
+
     return mount(root);
   }
 
   function buildWheel(wrapEl, wheelEl, labelsEl, labels){
     const n = labels.length; const seg = 360/n;
-    // conic-gradient colores
-    const cols = Array.from({length:n}).map((_,i)=>`hsl(${(i*(360/n))%360} 85% 55%) ${i*seg}deg ${(i+1)*seg}deg`).join(',');
+    // Pintado sólido de segmentos (sin huecos)
+    const cols = Array.from({length:n}).map((_,i)=>{
+      const a0=i*seg, a1=(i+1)*seg; return `hsl(${(i*(360/n))%360} 85% 55%) ${a0}deg ${a1}deg`;
+    }).join(',');
     wheelEl.style.background = `conic-gradient(${cols})`;
 
-    // colocar etiquetas alrededor del círculo
-    labelsEl.innerHTML='';
-    const rect = wrapEl.getBoundingClientRect();
-    const R = Math.min(rect.width, rect.height)/2 - 36; // radio para etiquetas
-    for(let i=0;i<n;i++){
-      const angle = i*seg + seg/2;
-      const lab = document.createElement('div'); lab.className='slice-label'; lab.textContent=labels[i];
-      lab.style.transform = `translate(-50%,-50%) rotate(${angle}deg) translateY(-${R}px) rotate(${-angle}deg)`;
-      labelsEl.appendChild(lab);
+    function placeLabels(){
+      const rect = wrapEl.getBoundingClientRect();
+      const W = rect.width, H = rect.height;
+      if(!W || !H){ requestAnimationFrame(placeLabels); return; }
+      const R = Math.min(W,H)/2 - 36; // radio para etiquetas
+      labelsEl.innerHTML='';
+      for(let i=0;i<n;i++){
+        const angle = i*seg + seg/2;
+        const lab = document.createElement('div'); lab.className='slice-label'; lab.textContent = labels[i];
+        lab.style.transform = `translate(-50%,-50%) rotate(${angle}deg) translateY(-${R}px) rotate(${-angle}deg)`;
+        labelsEl.appendChild(lab);
+      }
     }
+    placeLabels();
+    const reflow = ()=> requestAnimationFrame(placeLabels);
+    window.addEventListener('resize', reflow, { passive:true });
+    window.addEventListener('orientationchange', reflow, { passive:true });
   }
 
   // ----------------- Screen 3: Booking -----------------
@@ -316,3 +341,4 @@
 </script>
 </body>
 </html>
+
