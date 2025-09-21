@@ -1,113 +1,566 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Ticket, Coins, ChevronRight, Sparkles, Clock } from "lucide-react";
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego Mejorado</title>
-  <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=h6QPgHLK4TYUBG9JibvEjdMnodTGfAcCdcZ0N7a5Q3tRhmWEqgrGnD9d62DuLlOPnIMPLp5Lyz8tq4MSGN4JCo0Mzw-zhQT7vXjC0-kFTr1Rs3FNXCp82e3zXibkftW2FsM_6lINqBVqpmOHw6Lf9HQH5KLMssjG9SL6vhB-MopTHSQZypuZWCodGrY_d0NwTRpNteaElrgrtfbghiJ3H-bg7EljouzKnnHyJgCnQro1INnRaateUjkd-fO6XkK2" charset="UTF-8"></script><style>
-    body { font-family: Arial, sans-serif; background: #111; color: #fff; margin: 0; text-align: center; overflow-x: hidden;}
-    .hidden { display: none !important; }
-    /* Marcadores */
-    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px; font-weight: bold; font-size: 20px; }
-    .ticket { background: white; color: black; padding: 10px 15px; border: 3px solid gold; border-radius: 10px; min-width: 90px; font-size: 22px;}
-    .coins { background: gold; color: black; border-radius: 50%; padding: 15px; font-size: 18px; font-weight: bold; min-width: 90px;}
-    /* Texto animado */
-    .phrase { font-size: 22px; margin: 20px; animation: pulseSpark 1.8s infinite; }
-    @keyframes pulseSpark {0%{text-shadow:0 0 6px rgba(255,255,255,0.0);}50%{text-shadow:0 0 18px rgba(255,255,255,0.9);}100%{text-shadow:0 0 6px rgba(255,255,255,0.0);}}
-    /* Cartas */
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; justify-items: center; margin: 20px; }
-    .card { width: 100px; height: 150px; perspective: 1000px; cursor: pointer; }
-    .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; }
-    .card.revealed .card-inner { transform: rotateY(180deg); }
-    .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display:flex; align-items:center; justify-content:center; font-size: 16px; font-weight: bold; }
-    .card-front { background: linear-gradient(135deg, #ff6, #f06, #06f); color: white; }
-    .card-back { background: white; color: black; transform: rotateY(180deg); padding: 10px; text-align:center; }
-    .card.expanded { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(2); z-index: 1000; transition: transform 0.5s; }
-    /* Confeti */
-    .confetti { position: fixed; width: 10px; height: 10px; background: red; top: 0; animation: fall 3s linear forwards;}
-    @keyframes fall { to { transform: translateY(100vh) rotate(720deg);} }
-    /* Monedas */
-    .coin { position: fixed; font-size: 20px; animation: float 3s linear forwards; }
-    @keyframes float { to { transform: translateY(100vh) rotate(360deg);} }
-    /* Barra progreso */
-    .progress { width: 90%; margin: 20px auto; background: #333; height: 14px; border-radius: 7px; overflow: hidden;}
-    .progress-bar { background: limegreen; height: 100%; width: 20%; transition: width 0.5s;}
-    .big-message { font-size: 26px; margin-top: 20px; }
-    button { padding: 12px 24px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; margin: 15px;}
-  </style>
-</head>
-<body>
+// ------------------------------
+// Utilidades
+// ------------------------------
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-<div id="game">
-  <div class="top-bar">
-    <div class="ticket">€ <span id="euros">0</span></div>
-    <div class="coins">COINS <span id="coins">0</span></div>
-    <div class="ticket">% <span id="discount">0</span></div>
-  </div>
+// Formatea números con miles
+const formatCoins = (n) => n.toLocaleString("es-ES");
 
-  <!-- CARTAS -->
-  <div id="cards-phase">
-    <div class="phrase">Elige bien, tu premio te espera detrás de una carta</div>
-    <div class="cards">
-      <div class="card" data-prize="Pase gratuito fitness"><div class="card-inner"><div class="card-front">?</div><div class="card-back">Pase gratuito fitness</div></div></div>
-      <div class="card" data-prize="10% DTO. compra"><div class="card-inner"><div class="card-front">?</div><div class="card-back">10% DTO.</div></div></div>
-      <div class="card" data-prize="2000 Coins"><div class="card-inner"><div class="card-front">?</div><div class="card-back">2000 Coins</div></div></div>
-      <div class="card" data-prize="Clase Yoga"><div class="card-inner"><div class="card-front">?</div><div class="card-back">Clase Yoga</div></div></div>
-      <div class="card" data-prize="Clase Zumba"><div class="card-inner"><div class="card-front">?</div><div class="card-back">Clase Zumba</div></div></div>
-      <div class="card" data-prize="Clase Pilates"><div class="card-inner"><div class="card-front">?</div><div class="card-back">Clase Pilates</div></div></div>
+// ------------------------------
+// Componente: Marcadores Superiores
+// ------------------------------
+function TopStats({ euros, discount, coins }) {
+  return (
+    <div className="fixed top-2 left-2 right-2 z-40 flex items-center justify-between gap-2">
+      {/* Ticket Euros */}
+      <div className="relative">
+        <div className="bg-white/95 text-yellow-700 shadow-lg rounded-xl border border-yellow-200 px-3 py-1.5 flex items-center gap-1.5">
+          <Ticket className="w-4 h-4" />
+          <span className="text-xs font-semibold">€ ganados</span>
+          <span className="text-base font-extrabold">{euros.toFixed(0)}€</span>
+        </div>
+        <div className="absolute -inset-[2px] rounded-xl pointer-events-none" style={{
+          background: "conic-gradient(from 180deg, #fef3c7, #fde68a, #facc15, #f59e0b, #fef3c7)",
+          filter: "blur(6px)", opacity: 0.25
+        }} />
+      </div>
+
+      {/* Coins centro (solo en top para móvil simplificado) */}
+      <div className="flex-1 flex justify-center">
+        <div className="relative">
+          <div className="rounded-full bg-white shadow-lg border border-yellow-200 px-4 py-1.5 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full grid place-items-center border border-yellow-300">
+              <Coins className="w-4 h-4 text-yellow-600" />
+            </div>
+            <div className="text-center leading-tight">
+              <div className="text-[10px] font-semibold tracking-wider text-yellow-700">COINS</div>
+              <div className="text-base font-extrabold">{formatCoins(coins)}</div>
+            </div>
+          </div>
+          <div className="absolute inset-0 rounded-full pointer-events-none" style={{
+            background: "radial-gradient(circle, rgba(250,204,21,0.35), transparent 60%)"
+          }} />
+        </div>
+      </div>
+
+      {/* Ticket % descuento */}
+      <div className="relative">
+        <div className="bg-white/95 text-yellow-700 shadow-lg rounded-xl border border-yellow-200 px-3 py-1.5 flex items-center gap-1.5">
+          <Ticket className="w-4 h-4" />
+          <span className="text-xs font-semibold">% descuento</span>
+          <span className="text-base font-extrabold">{discount}%</span>
+        </div>
+        <div className="absolute -inset-[2px] rounded-xl pointer-events-none" style={{
+          background: "conic-gradient(from 0deg, #fef3c7, #fde68a, #facc15, #f59e0b, #fef3c7)",
+          filter: "blur(6px)", opacity: 0.25
+        }} />
+      </div>
     </div>
-    <div class="big-message" id="card-result"></div>
-    <button id="next-btn" class="hidden">Siguiente ➡</button>
-  </div>
+  );
+}
 
-  <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
-</div>
+// ------------------------------
+// Confetti ultra-ligero (CSS)
+// ------------------------------
+const Confetti = ({ show }) => {
+  const pieces = 80;
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div className="fixed inset-0 z-30 pointer-events-none overflow-hidden"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {[...Array(pieces)].map((_, i) => (
+            <span
+              key={i}
+              className="absolute w-2 h-2"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `-10%`,
+                background: `hsl(${Math.random() * 360} 90% 60%)`,
+                transform: `rotate(${Math.random() * 360}deg)`,
+                animation: `fall ${2 + Math.random() * 1.8}s linear ${Math.random()}s forwards`
+              }}
+            />
+          ))}
+          <style>{`
+            @keyframes fall { to { transform: translateY(120vh) rotate(720deg); opacity: .9 } }
+          `}</style>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
-<script>
-let euros=0, discount=0, coins=0, progress=20;
+// ------------------------------
+// Paso 1: Juego de Cartas
+// ------------------------------
+function CardGame({ onComplete, onWin }) {
+  const [phase, setPhase] = useState("intro"); // intro -> shuffle -> pick -> reveal -> payout -> done
+  const [selected, setSelected] = useState(null);
+  const [allowPick, setAllowPick] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [bigWin, setBigWin] = useState(null); // "euros" | "discount" | "coins" para mostrarlos en grande
 
-document.querySelectorAll('.card').forEach(card => {
-  card.addEventListener('click', () => {
-    if(document.getElementById('card-result').textContent) return;
-    const prize = card.dataset.prize;
-    card.classList.add('revealed');
-    card.classList.add('expanded');
-    document.getElementById('card-result').textContent = "¡Felicidades! Has ganado: " + prize;
-    // Premios
-    euros += Math.floor(Math.random()*6)+5;
-    discount += Math.floor(Math.random()*11)+5;
-    coins += Math.floor(Math.random()*1001)+1000;
-    document.getElementById('euros').textContent=euros;
-    document.getElementById('discount').textContent=discount;
-    document.getElementById('coins').textContent=coins;
-    progress=Math.min(100, progress+20);
-    document.getElementById('progress-bar').style.width=progress+"%";
-    setTimeout(()=>document.getElementById('next-btn').classList.remove('hidden'),2000);
-    // Más confeti
-    for(let i=0;i<60;i++){ 
-      let conf=document.createElement('div'); 
-      conf.className='confetti'; 
-      conf.style.left=Math.random()*100+'vw'; 
-      conf.style.background='hsl('+Math.random()*360+',100%,50%)'; 
-      conf.style.animationDuration=(2+Math.random()*2)+'s'; 
-      document.body.appendChild(conf); 
-      setTimeout(()=>conf.remove(),4000); 
-    }
-    // Monedas flotando
-    for(let i=0;i<30;i++){ 
-      let coin=document.createElement('div'); 
-      coin.className='coin'; 
-      coin.textContent='🪙'; 
-      coin.style.left=Math.random()*100+'vw'; 
-      coin.style.top='0px'; 
-      coin.style.fontSize=(15+Math.random()*20)+'px';
-      coin.style.animationDuration=(2+Math.random()*2)+'s';
-      document.body.appendChild(coin);
-      setTimeout(()=>coin.remove(),4000);
-    }
-  });
-});
-</script>
-</body>
-</html>
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("shuffle"), 1600);
+    const t2 = setTimeout(() => setAllowPick(true), 4200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const handlePick = (idx) => {
+    if (!allowPick || selected !== null) return;
+    setSelected(idx);
+    setPhase("reveal");
+    // confetti + mensaje tras 2s
+    setTimeout(() => setShowConfetti(true), 250);
+    setTimeout(() => {
+      onWin(); // comunica el premio base (pase gratuito)
+      setPhase("payout");
+      // Mostrar tickets en grande en secuencia
+      setBigWin("euros");
+      setTimeout(() => setBigWin("discount"), 1700);
+      setTimeout(() => setBigWin("coins"), 3300);
+      setTimeout(() => { setBigWin(null); setPhase("done"); onComplete(); }, 4800);
+    }, 2000);
+  };
+
+  const cards = [0, 1, 2];
+
+  return (
+    <div className="min-h-[100dvh] px-3 pt-20 pb-24 bg-gradient-to-b from-black to-zinc-900 text-white relative overflow-hidden">
+      {/* Título dinámico */}
+      <div className="text-center mb-4">
+        <AnimatePresence mode="wait">
+          {phase === "intro" && (
+            <motion.h1
+              key="intro"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 140, damping: 12 }}
+              className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-200 drop-shadow-[0_2px_6px_rgba(234,179,8,.5)]"
+            >
+              Elige bien, tu premio te espera detrás de una carta
+            </motion.h1>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Cartas */}
+      <div className="flex justify-center items-center gap-3 mt-4">
+        {cards.map((c, i) => {
+          const isPicked = selected === i;
+          const isOther = selected !== null && selected !== i;
+          return (
+            <motion.div
+              key={i}
+              onClick={() => handlePick(i)}
+              className={"w-28 h-44 sm:w-32 sm:h-52 [perspective:1000px] " + (isOther ? "grayscale" : "")}
+              initial={{ y: 0, rotate: 0 }}
+              animate={
+                phase === "shuffle"
+                  ? { x: [0, (i - 1) * 36, (1 - i) * 30, 0], rotate: [0, 10, -8, 0] }
+                  : { x: 0, rotate: 0 }
+              }
+              transition={{ duration: 1.2, repeat: phase === "shuffle" ? 2 : 0, ease: "easeInOut" }}
+            >
+              <motion.div
+                className="relative w-full h-full rounded-2xl shadow-xl border border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 cursor-pointer"
+                style={{ transformStyle: "preserve-3d" }}
+                animate={isPicked ? { rotateY: 180 } : { rotateY: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                {/* Cara trasera */}
+                <div className="absolute inset-0 rounded-2xl grid place-items-center backface-hidden">
+                  <Sparkles className="w-8 h-8 text-yellow-400" />
+                </div>
+                {/* Cara delantera */}
+                <div className="absolute inset-0 rounded-2xl grid place-items-center bg-gradient-to-br from-yellow-200 to-amber-300 text-zinc-900 font-extrabold text-center [transform:rotateY(180deg)] backface-hidden">
+                  {isPicked ? (
+                    <div>
+                      <div className="text-sm">Pase gratuito</div>
+                      <div className="text-xl">FITNESS</div>
+                    </div>
+                  ) : (
+                    <div className="opacity-0">?</div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Mensajes después de revelar */}
+      <AnimatePresence>
+        {phase === "reveal" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center mt-6 text-amber-200 font-bold"
+          >
+            Pase gratuito fitness
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {phase === "payout" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-center mt-6 text-2xl font-extrabold"
+          >
+            ¡Felicidades! Has ganado un Pase gratuito a un centro fitness.
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confetti */}
+      <Confetti show={showConfetti} />
+
+      {/* Tickets/Coins gigantes en secuencia */}
+      <AnimatePresence>
+        {bigWin && (
+          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/70"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {bigWin === "euros" && (
+              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-white rounded-2xl px-6 py-4 border-2 border-yellow-300 shadow-2xl flex items-center gap-3">
+                <Ticket className="w-8 h-8 text-yellow-600" />
+                <div>
+                  <div className="text-zinc-700 text-sm font-semibold">€ ganados</div>
+                  <Counting targetMin={5} targetMax={10} suffix="€" className="text-3xl font-extrabold text-yellow-700"/>
+                </div>
+              </motion.div>
+            )}
+            {bigWin === "discount" && (
+              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-white rounded-2xl px-6 py-4 border-2 border-yellow-300 shadow-2xl flex items-center gap-3">
+                <Ticket className="w-8 h-8 text-yellow-600" />
+                <div>
+                  <div className="text-zinc-700 text-sm font-semibold">% descuento</div>
+                  <Counting targetMin={5} targetMax={15} suffix="%" className="text-3xl font-extrabold text-yellow-700"/>
+                </div>
+              </motion.div>
+            )}
+            {bigWin === "coins" && (
+              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-white rounded-2xl px-6 py-4 border-2 border-yellow-300 shadow-2xl flex items-center gap-3">
+                <Coins className="w-8 h-8 text-yellow-600" />
+                <div>
+                  <div className="text-zinc-700 text-sm font-semibold">COINS</div>
+                  <Counting targetMin={1000} targetMax={2000} suffix="" className="text-3xl font-extrabold text-yellow-700"/>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Contador animado aleatorio, comunica incremento hacia el padre con onDone
+function Counting({ targetMin, targetMax, suffix = "", className = "", onDone }) {
+  const [val, setVal] = useState(0);
+  const target = useMemo(() => rand(targetMin, targetMax), [targetMin, targetMax]);
+  useEffect(() => {
+    const start = performance.now();
+    const dur = 1100;
+    const tick = (t) => {
+      const p = clamp((t - start) / dur, 0, 1);
+      setVal(Math.round(p * target));
+      if (p < 1) requestAnimationFrame(tick); else onDone && onDone(target);
+    };
+    const raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, onDone]);
+  return <div className={className}>{formatCoins(val)}{suffix}</div>;
+}
+
+// ------------------------------
+// Paso 2: Ruleta
+// ------------------------------
+const WHEEL_PRIZES = [
+  "Clase de Yoga",
+  "Acceso gimnasio",
+  "Clase de Pilates",
+  "Clase de Zumba",
+  "Entrenamiento funcional",
+  "Clase de Danza",
+];
+
+function Wheel({ coins, onSpin, onFinishPrize }) {
+  const [spinning, setSpinning] = useState(false);
+  const [angle, setAngle] = useState(0);
+  const [result, setResult] = useState(null);
+  const seg = 360 / WHEEL_PRIZES.length;
+
+  const spin = () => {
+    if (spinning) return;
+    const { ok } = onSpin(); // resta coins en padre si puede
+    if (!ok) return;
+    setResult(null);
+    setSpinning(true);
+    const idx = rand(0, WHEEL_PRIZES.length - 1);
+    // vueltas + ajuste al segmento elegido (flecha arriba 0deg)
+    const base = 360 * 6; // 6 vueltas
+    const targetAngle = base + (360 - (idx * seg + seg / 2));
+    setAngle(targetAngle);
+    setTimeout(() => {
+      setSpinning(false);
+      const prize = WHEEL_PRIZES[idx];
+      setResult(prize);
+      onFinishPrize(prize);
+    }, 4200);
+  };
+
+  return (
+    <div className="min-h-[100dvh] px-3 pt-20 pb-24 bg-gradient-to-b from-zinc-900 to-black text-white relative">
+      <div className="text-center text-xl font-extrabold mb-2">¡Gira la ruleta!</div>
+      <div className="text-center text-sm text-zinc-300 mb-6">Coste: 500 coins</div>
+
+      {/* Ruleta */}
+      <div className="relative mx-auto w-72 h-72">
+        {/* Flecha */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-4 z-20">
+          <div className="w-0 h-0 border-l-8 border-r-8 border-b-[18px] border-l-transparent border-r-transparent border-b-amber-400 drop-shadow"/>
+        </div>
+        <motion.div
+          className="absolute inset-0 rounded-full shadow-2xl overflow-hidden bg-zinc-800 border-4 border-zinc-700"
+          animate={{ rotate: angle }}
+          transition={{ duration: 4.2, ease: [0.2, 0.9, 0.2, 1] }}
+          style={{ willChange: "transform" }}
+        >
+          {/* Segmentos */}
+          {WHEEL_PRIZES.map((label, i) => (
+            <WheelSlice key={i} index={i} total={WHEEL_PRIZES.length} label={label} />
+          ))}
+        </motion.div>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <Button onClick={spin} disabled={spinning || coins < 500} className="text-base px-6 py-6 rounded-2xl">
+          Girar por 500 coins
+        </Button>
+      </div>
+
+      {coins < 500 && (
+        <div className="text-center mt-3 text-red-300 text-sm">No tienes coins suficientes para girar.</div>
+      )}
+
+      {/* Resultado */}
+      <AnimatePresence>
+        {result && (
+          <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/80"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white text-zinc-900 rounded-3xl p-6 mx-4 text-center shadow-2xl">
+              <div className="text-2xl font-extrabold mb-1">¡Premio obtenido!</div>
+              <div className="text-lg font-bold text-amber-600">{result}</div>
+              <div className="mt-4">
+                <NextButton onClick={() => onFinishPrize(result)} label="Siguiente" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function WheelSlice({ index, total, label }) {
+  const angle = (360 / total) * index;
+  const sweep = 360 / total;
+  // SVG de porción con fondo llamativo
+  const hue = (index * (360 / total)) % 360;
+  const bg = `hsl(${hue} 85% 55%)`;
+  const bg2 = `hsl(${(hue + 20) % 360} 85% 50%)`;
+  return (
+    <div className="absolute inset-0" style={{ transform: `rotate(${angle}deg)` }}>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 origin-left" style={{ width: "50%", height: "50%" }}>
+        <div className="absolute inset-0" style={{ transform: `skewY(-${90 - sweep}deg)` }}>
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }} />
+        </div>
+      </div>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ transform: `rotate(${sweep / 2}deg)` }}>
+        <div className="text-[11px] font-extrabold uppercase tracking-wide" style={{ width: 120, transform: "translateY(-120px)", textShadow: "0 1px 2px rgba(0,0,0,.4)", textAlign: "center" }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------
+// Paso 3: Reserva con temporizador
+// ------------------------------
+function Booking({ expiresInSec = 300, summary, onReserved }) {
+  const [remaining, setRemaining] = useState(expiresInSec);
+  const [when, setWhen] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [phone, setPhone] = useState("");
+
+  // temporizador
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setInterval(() => setRemaining((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [remaining]);
+
+  const mm = Math.floor(remaining / 60).toString().padStart(1, "0");
+  const ss = (remaining % 60).toString().padStart(2, "0");
+  const locked = remaining <= 0;
+  const canSubmit = !locked && when && name && surname && phone;
+
+  return (
+    <div className="min-h-[100dvh] px-3 pt-20 pb-28 bg-gradient-to-b from-black to-zinc-900 text-white relative">
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <Clock className="w-5 h-5 text-amber-400" />
+        <div className={`text-2xl font-extrabold ${locked ? "text-red-400" : "text-amber-300"}`}>{mm}:{ss}</div>
+      </div>
+      <div className="text-center text-sm text-zinc-300 mb-6">Tiempo restante para usar tu bono</div>
+
+      <div className={`bg-zinc-800/60 rounded-2xl p-4 border border-zinc-700 ${locked ? "opacity-50" : ""}`}>
+        <div className="text-lg font-bold mb-2">Reserva tu cita</div>
+        <label className="text-sm text-zinc-300">Día y hora</label>
+        <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} disabled={locked}
+          className="w-full mt-1 mb-3 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2" />
+
+        <div className="grid grid-cols-1 gap-3">
+          <div>
+            <label className="text-sm text-zinc-300">Nombre</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} disabled={locked}
+              className="w-full mt-1 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2" placeholder="Tu nombre" />
+          </div>
+          <div>
+            <label className="text-sm text-zinc-300">Apellidos</label>
+            <input value={surname} onChange={(e) => setSurname(e.target.value)} disabled={locked}
+              className="w-full mt-1 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2" placeholder="Tus apellidos" />
+          </div>
+          <div>
+            <label className="text-sm text-zinc-300">Teléfono (para enviarte por WhatsApp tu pase y recompensas)</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={locked}
+              className="w-full mt-1 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2" placeholder="Tu teléfono" inputMode="tel" />
+          </div>
+        </div>
+
+        <Button disabled={!canSubmit} onClick={() => onReserved({ when, name, surname, phone })} className="w-full mt-4 py-6 rounded-2xl text-base">
+          Reservar cita
+        </Button>
+        {locked && <div className="text-red-300 text-sm mt-2">Tiempo agotado. Esta página ha sido bloqueada.</div>}
+      </div>
+
+      <div className="mt-4 bg-zinc-800/60 rounded-2xl p-4 border border-zinc-700">
+        <div className="text-lg font-bold mb-2">Tus recompensas</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-white rounded-xl p-2 text-zinc-800 font-extrabold">{summary.euros.toFixed(0)}€</div>
+          <div className="bg-white rounded-xl p-2 text-zinc-800 font-extrabold">{summary.discount}%</div>
+          <div className="bg-white rounded-xl p-2 text-zinc-800 font-extrabold">{formatCoins(summary.coins)} coins</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NextButton({ onClick, label = "Siguiente", delay = 2500 }) {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setEnabled(true), delay); return () => clearTimeout(t); }, [delay]);
+  return (
+    <Button onClick={onClick} disabled={!enabled} className="mt-6 w-full max-w-xs mx-auto py-6 rounded-2xl text-base flex items-center justify-center gap-2">
+      {label} <ChevronRight className="w-5 h-5" />
+    </Button>
+  );
+}
+
+// ------------------------------
+// App principal: gestiona pasos y progreso
+// ------------------------------
+export default function App() {
+  const [step, setStep] = useState(0); // 0 cartas, 1 ruleta, 2 reserva, 3 final
+  const [euros, setEuros] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [coins, setCoins] = useState(0);
+  const [wonPrize, setWonPrize] = useState(null);
+
+  const progress = [10, 45, 80, 100][step] || 0;
+
+  // al ganar del juego de cartas: aplicar incrementos aleatorios
+  const handleCardWin = () => {
+    const e = rand(5, 10);
+    const d = rand(5, 15);
+    const c = rand(1000, 2000);
+    // animaciones básicas de conteo hacia los marcadores
+    animateNumber(euros, euros + e, 1200, setEuros);
+    animateNumber(discount, discount + d, 1200, setDiscount);
+    animateNumber(coins, coins + c, 1200, setCoins);
+  };
+
+  const goNextFromCards = () => setStep(1);
+
+  const handleSpin = () => {
+    if (coins < 500) return { ok: false };
+    setCoins((c) => c - 500);
+    return { ok: true };
+  };
+
+  const handleFinishPrize = (prize) => {
+    if (prize) setWonPrize(prize);
+    // Mostrar botón siguiente dentro del overlay de premio; como alternativa, avanzamos manualmente
+  };
+
+  const summary = { euros, discount, coins };
+
+  return (
+    <div className="relative">
+      <TopStats euros={euros} discount={discount} coins={coins} />
+
+      {step === 0 && (
+        <>
+          <CardGame onComplete={() => { /* muestra botón siguiente */ }} onWin={handleCardWin} />
+          <div className="fixed bottom-20 left-0 right-0 flex justify-center z-30">
+            <NextButton onClick={goNextFromCards} />
+          </div>
+        </>
+      )}
+
+      {step === 1 && (
+        <Wheel coins={coins} onSpin={handleSpin} onFinishPrize={() => setStep(2)} />
+      )}
+
+      {step === 2 && (
+        <Booking summary={summary} onReserved={() => setStep(3)} />
+      )}
+
+      {step === 3 && (
+        <div className="min-h-[100dvh] px-3 pt-24 pb-28 bg-gradient-to-b from-zinc-900 to-black text-white text-center">
+          <div className="text-3xl font-extrabold mb-2">¡Reserva completada!</div>
+          <div className="text-amber-200 font-bold">Te enviaremos tu pase gratuito y recompensas por WhatsApp.</div>
+        </div>
+      )}
+
+      {/* Barra de progreso inferior */}
+      <div className="fixed bottom-2 left-2 right-2 z-40">
+        <Progress value={progress} className="h-3 rounded-full" />
+        <div className="text-center text-[11px] text-zinc-300 mt-1">Progreso {progress}%</div>
+      </div>
+    </div>
+  );
+}
+
+function animateNumber(from, to, ms, setter) {
+  const start = performance.now();
+  const diff = to - from;
+  const tick = (t) => {
+    const p = clamp((t - start) / ms, 0, 1);
+    setter(Math.round(from + diff * p));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
