@@ -9,20 +9,10 @@
     .hidden { display: none !important; }
 
     /* Marcadores */
-    .top-bar { display: flex; justify-content: center; gap: 30px; align-items: center; padding: 10px; font-weight: bold; font-size: 20px; }
-    .ticket, .coins-box {
-      background: white; 
-      color: black; 
-      padding: 15px 20px; 
-      border-radius: 15px; 
-      font-size: 26px; 
-      min-width: 120px; 
-      display:flex; 
-      align-items:center; 
-      justify-content:center;
-      box-shadow: 0 0 12px rgba(255,255,255,0.4);
-    }
-    .coins-box { background: gold; }
+    .top-bar { display: flex; justify-content: space-around; align-items: center; padding: 10px; font-weight: bold; font-size: 20px; }
+    .ticket, .coins { padding: 10px 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(255,255,255,0.3);}
+    .ticket { background: linear-gradient(135deg,#ffe066,#ffd43b); color: #000; border: 2px solid #fff; }
+    .coins { background: radial-gradient(circle at 30% 30%, #ffd700, #cdaa00); color: #111; font-weight: bold; border: 2px solid #fff;}
 
     /* Texto animado */
     .phrase { font-size: 22px; margin: 20px; animation: pulseSpark 1.8s infinite; }
@@ -30,25 +20,13 @@
 
     /* Cartas */
     .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; justify-items: center; margin: 20px; }
-    .card { width: 110px; height: 160px; perspective: 1000px; cursor: pointer; }
+    .card { width: 120px; height: 170px; perspective: 1000px; cursor: pointer; }
     .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; }
     .card.revealed .card-inner { transform: rotateY(180deg); }
-    .card-front, .card-back { 
-      position: absolute; 
-      width: 100%; height: 100%; 
-      backface-visibility: hidden; 
-      border-radius: 12px; 
-      display:flex; 
-      flex-direction:column;
-      align-items:center; 
-      justify-content:center; 
-      font-size: 16px; 
-      font-weight: bold; 
-      padding:8px;
-    }
+    .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display:flex; flex-direction: column; align-items:center; justify-content:center; font-size: 16px; font-weight: bold; padding: 8px;}
     .card-front { background: linear-gradient(135deg, #ff6, #f06, #06f); color: white; }
-    .card-back { background: #fff; color: #000; transform: rotateY(180deg); border: 2px solid #ccc; }
-    .card-back small { font-size: 12px; color: #555; margin-bottom: 5px; }
+    .card-back { background: #fff; color: #000; transform: rotateY(180deg); border: 2px solid #000;}
+    .card-back small { font-size: 10px; display: block; margin-bottom: 6px; color: #d00; font-weight: bold;}
 
     .card.expanded { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(2); z-index: 1000; transition: transform 0.5s; }
 
@@ -56,15 +34,16 @@
     .confetti { position: fixed; width: 10px; height: 10px; background: red; top: 0; animation: fall 3s linear forwards;}
     @keyframes fall { to { transform: translateY(100vh) rotate(720deg);} }
 
-    /* Animación recompensa volando */
-    .reward { position: fixed; font-size: 24px; z-index: 2000; transition: all 1s ease-in-out; }
+    /* Monedas volando */
+    .fly { position: absolute; pointer-events: none; font-size: 20px; animation: flyAnim 1s forwards; }
+    @keyframes flyAnim { to { transform: translate(0, -200px) scale(0.5); opacity: 0;} }
 
     /* Barra progreso */
-    .progress { width: 90%; margin: 20px auto; background: #333; height: 14px; border-radius: 7px; overflow: hidden;}
+    .progress { width: 90%; margin: 10px auto; background: #333; height: 14px; border-radius: 7px; overflow: hidden;}
     .progress-bar { background: limegreen; height: 100%; width: 20%; transition: width 0.5s;}
 
     .big-message { font-size: 26px; margin-top: 20px; }
-    button { padding: 12px 24px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; margin: 15px;}
+    button { padding: 12px 24px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; margin: 15px; background: #28a745; color: #fff; }
   </style>
 </head>
 <body>
@@ -72,7 +51,7 @@
 <div id="game">
   <div class="top-bar">
     <div class="ticket">€ <span id="euros">0</span></div>
-    <div class="coins-box">🪙 <span id="coins">0</span></div>
+    <div class="coins">🪙 <span id="coins">0</span></div>
     <div class="ticket">% <span id="discount">0</span></div>
   </div>
 
@@ -80,9 +59,9 @@
   <div id="cards-phase">
     <div class="phrase">Elige bien, tu premio te espera detrás de una carta</div>
     <div class="cards">
-      <div class="card" data-prize="Pase gratuito fitness x1"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness x1</div></div></div>
-      <div class="card" data-prize="Pase gratuito fitness x1"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness x1</div></div></div>
-      <div class="card" data-prize="Pase gratuito fitness x1"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness x1</div></div></div>
+      <div class="card" data-prize="Pase gratuito fitness"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness</div></div></div>
+      <div class="card" data-prize="Pase gratuito fitness"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness</div></div></div>
+      <div class="card" data-prize="Pase gratuito fitness"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Pase gratuito fitness</div></div></div>
       <div class="card" data-prize="10% DTO. compra"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>10% DTO.</div></div></div>
       <div class="card" data-prize="2000 Coins"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>2000 Coins</div></div></div>
       <div class="card" data-prize="Clase Yoga"><div class="card-inner"><div class="card-front">?</div><div class="card-back"><small>Reclámalo ahora</small>Clase Yoga</div></div></div>
@@ -91,27 +70,22 @@
     <button id="next-btn" class="hidden">Siguiente ➡</button>
   </div>
 
+  <!-- Barra de progreso abajo -->
   <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
 </div>
 
 <script>
 let euros=0, discount=0, coins=0, progress=20;
 
-function flyReward(symbol, targetId){
-  const target = document.getElementById(targetId);
-  const rect = target.getBoundingClientRect();
-  const reward = document.createElement('div');
-  reward.className = 'reward';
-  reward.textContent = symbol;
-  reward.style.left = window.innerWidth/2 + "px";
-  reward.style.top = window.innerHeight/2 + "px";
-  document.body.appendChild(reward);
-  setTimeout(()=>{
-    reward.style.left = rect.left + "px";
-    reward.style.top = rect.top + "px";
-    reward.style.transform = "scale(0.5)";
-  },50);
-  setTimeout(()=>reward.remove(),1200);
+function flyToCounter(symbol, targetId){
+  const el = document.createElement("div");
+  el.className="fly";
+  el.textContent = symbol;
+  document.body.appendChild(el);
+  const rect = document.getElementById(targetId).getBoundingClientRect();
+  el.style.left = rect.left + "px";
+  el.style.top = (rect.top+50) + "px";
+  setTimeout(()=>el.remove(),1000);
 }
 
 document.querySelectorAll('.card').forEach(card => {
@@ -122,32 +96,23 @@ document.querySelectorAll('.card').forEach(card => {
     card.classList.add('expanded');
     document.getElementById('card-result').textContent = "¡Felicidades! Has ganado: " + prize;
 
-    // Premios adicionales
+    // Premios
     euros += Math.floor(Math.random()*6)+5;
     discount += Math.floor(Math.random()*11)+5;
     coins += Math.floor(Math.random()*1001)+1000;
 
-    setTimeout(()=>{
-      document.getElementById('euros').textContent=euros;
-      flyReward("€", "euros");
-    },500);
-
-    setTimeout(()=>{
-      document.getElementById('discount').textContent=discount;
-      flyReward("%", "discount");
-    },1000);
-
-    setTimeout(()=>{
-      document.getElementById('coins').textContent=coins;
-      flyReward("🪙", "coins");
-    },1500);
+    // Vuelos de recompensa
+    setTimeout(()=>{flyToCounter("€","euros"); document.getElementById('euros').textContent=euros;},500);
+    setTimeout(()=>{flyToCounter("%","discount"); document.getElementById('discount').textContent=discount;},900);
+    setTimeout(()=>{flyToCounter("🪙","coins"); document.getElementById('coins').textContent=coins;},1300);
 
     progress=Math.min(100, progress+20);
     document.getElementById('progress-bar').style.width=progress+"%";
+
     setTimeout(()=>document.getElementById('next-btn').classList.remove('hidden'),2000);
 
     // Confeti
-    for(let i=0;i<60;i++){ 
+    for(let i=0;i<40;i++){ 
       let conf=document.createElement('div'); 
       conf.className='confetti'; 
       conf.style.left=Math.random()*100+'vw'; 
@@ -159,11 +124,9 @@ document.querySelectorAll('.card').forEach(card => {
   });
 });
 
-// Botón siguiente
+// Botón siguiente funcional
 document.getElementById('next-btn').addEventListener('click', ()=>{
-  document.getElementById('card-result').textContent="";
-  document.querySelectorAll('.card').forEach(c=>c.classList.remove('revealed','expanded'));
-  document.getElementById('next-btn').classList.add('hidden');
+  alert("Ir a la ruleta (aquí pon tu función real)");
 });
 </script>
 </body>
