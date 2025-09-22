@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Promo Fitness — Juego</title>
+  <style>
+    :root{
+      --bg1:#0a0a0a;--bg2:#18181b;--txt:#fff;--muted:#d4d4d8;
+      --amber:#f59e0b;--amber2:#facc15;--yellow:#fde68a;
+      --card:#1f1f23;--border:#3f3f46;--success:#22c55e;--danger:#ef4444;
+    }
+    html,body{height:100%;background:linear-gradient(#000,#0b0b0b);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;margin:0}
+    .app{min-height:100dvh;position:relative;padding:76px 12px 88px}
+    .top{position:fixed;top:8px;left:8px;right:8px;display:flex;gap:8px;align-items:center;z-index:40}
+    .top .ticket{background:#fff; color:#7c5a00; border:1px solid #f1d48b; border-radius:12px; padding:6px 12px; display:flex; gap:8px; align-items:center; box-shadow:0 6px 16px rgba(0,0,0,.35); font-size:18px;}
+    .top .coins{margin:0 auto; background:#fff; border:1px solid #f1d48b; border-radius:999px; padding:8px 16px; display:flex; align-items:center; gap:10px; box-shadow:0 6px 16px rgba(0,0,0,.35); font-size:18px;}
+    .coins .badge{width:34px;height:34px;border-radius:50%;border:1px solid #f1d48b;display:grid;place-items:center;font-size:18px}
+    .grad-glow{position:absolute;inset:-2px;border-radius:14px;filter:blur(8px);opacity:.3;background:conic-gradient(from 180deg,#fef3c7,#fde68a,#facc15,#f59e0b,#fef3c7);pointer-events:none}
+
+    .title{ text-align:center; font-weight:900; font-size:22px; background:linear-gradient(90deg,#fde68a,#f59e0b,#fde68a); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 2px 6px rgba(234,179,8,.45); }
+    .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; justify-items:center; margin-top:16px }
+    .card{ width:112px; height:176px; perspective:1000px }
+    .card-inner{ position:relative; width:100%; height:100%; transform-style:preserve-3d; border-radius:16px; border:1px solid var(--border); background:linear-gradient(#2a2a2e,#17171a); box-shadow:0 10px 20px rgba(0,0,0,.4); cursor:pointer; transition:transform .8s }
+    .card-inner.flipped{ transform:rotateY(180deg) }
+    .card-face{ position:absolute; inset:0; border-radius:16px; display:grid; place-items:center; backface-visibility:hidden }
+    .card-back{ color:#facc15 }
+    .card-front{ background:linear-gradient(135deg,#fde68a,#facc15); color:#111; transform:rotateY(180deg); font-weight:900; text-align:center }
+    .msg{ text-align:center; margin-top:16px; font-weight:800; color:#fde68a }
+
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.7); display:grid; place-items:center; z-index:50; animation:fade .2s }
+    .bigbox{ background:#fff; color:#1f2937; border:3px solid #f1d48b; border-radius:22px; padding:24px 28px; box-shadow:0 20px 40px rgba(0,0,0,.5); font-weight:900; text-align:center; font-size:24px;}
+
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(180deg,#f59e0b,#d97706); color:#111; font-weight:800; border:none; border-radius:16px; padding:14px 18px; box-shadow:0 10px 18px rgba(0,0,0,.4); cursor:pointer; font-size:18px;}
+    .btn[disabled]{ opacity:.5; filter:grayscale(1); cursor:not-allowed }
+    .next-fixed{ position:fixed; left:0; right:0; bottom:76px; display:flex; justify-content:center; z-index:30 }
+
+    /* Wheel */
+    .wheel-wrap{ margin:20px auto; width:320px; height:320px; position:relative; display:flex; justify-content:center; align-items:center;}
+    .wheel{ position:absolute; inset:0; border:6px solid #facc15; border-radius:50%; overflow:hidden; background:#27272a; box-shadow:0 16px 32px rgba(0,0,0,.55); }
+    .wheel::before{content:""; position:absolute; inset:-20px; border-radius:50%; background:radial-gradient(circle,#facc15aa,#f59e0b22,transparent); z-index:-1;}
+    .arrow{ position:absolute; left:50%; transform:translateX(-50%); top:-12px; width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:28px solid #fbbf24; z-index:2; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)) }
+    .slice-label{ position:absolute; left:50%; top:50%; transform-origin:center; font-weight:900; font-size:13px; text-shadow:0 1px 2px rgba(0,0,0,.4); width:140px; text-align:center }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="ticket"><span style="font-weight:600;">€ ganados</span><span id="euros" style="font-weight:900;">0€</span><div class="grad-glow"></div></div>
+    <div class="coins"><div class="badge">💰</div><div style="line-height:1"><div style="font-weight:700;color:#7c5a00;text-align:center">COINS</div><div id="coins" style="font-weight:900;color:#7c5a00">0</div></div></div>
+    <div class="ticket"><span style="font-weight:600;">% descuento</span><span id="disc" style="font-weight:900;">0%</span><div class="grad-glow"></div></div>
+  </div>
+
+  <main id="screen" class="app"></main>
+
+  <div class="progress-wrap">
+    <div class="progress"><div id="pbar"></div></div>
+    <div class="progress-txt" id="ptxt">Progreso 0%</div>
+  </div>
+
+<script>
+(function(){
+  const fmt = (n)=> n.toLocaleString('es-ES');
+  const $ = (s,root=document)=> root.querySelector(s);
+  const state = { step:0, euros:0, discount:0, coins:0, prize:null };
+  const stepsProgress = [10,45,80,100];
+
+  function setProgress(){ const v = stepsProgress[state.step]||0; $('#pbar').style.width = v+'%'; $('#ptxt').textContent = 'Progreso '+v+'%'; }
+  function setStats(){ $('#euros').textContent = Math.round(state.euros)+'€'; $('#disc').textContent = Math.round(state.discount)+'%'; $('#coins').textContent = fmt(Math.round(state.coins)); }
+
+  // ----------------- Screen 3: Booking -----------------
+  function screenBooking(){
+    const root = document.createElement('div');
+    root.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:22px;font-weight:900;color:#fde68a" id="timer">5:00</div>
+      </div>
+      <div style="text-align:center;color:#d4d4d8;margin-bottom:16px">Tiempo restante para usar tu bono</div>
+
+      <div class="card-ui" id="formbox">
+        <div style="font-size:18px;font-weight:900;margin-bottom:8px">Reserva tu cita</div>
+        <label class="label">Día y hora</label>
+        <input id="when" class="inp" type="datetime-local" />
+
+        <div style="display:grid;gap:10px;margin-top:10px">
+          <div><label class="label">Nombre</label><input id="name" class="inp" placeholder="Tu nombre" /></div>
+          <div><label class="label">Apellidos</label><input id="surname" class="inp" placeholder="Tus apellidos" /></div>
+          <div><label class="label">Teléfono (para enviarte por WhatsApp tu pase y recompensas)</label><input id="phone" class="inp" inputmode="tel" placeholder="Tu teléfono" /></div>
+          <div><label class="label">Correo electrónico</label><input id="email" class="inp" type="email" placeholder="tu@email.com" /></div>
+        </div>
+        <button class="btn" id="reserve" style="width:100%;margin-top:12px">Reservar cita</button>
+        <div id="lockmsg" style="color:#fecaca;font-size:14px;margin-top:8px;display:none">Tiempo agotado. Esta página ha sido bloqueada.</div>
+      </div>
+    `;
+    return mount(root);
+  }
+
+  function mount(node){ const screen=document.getElementById('screen'); screen.innerHTML=''; screen.appendChild(node); return node; }
+
+  // Start in booking to demo email field
+  state.step=3; setProgress(); screenBooking();
+})();
+</script>
+</body>
+</html>
