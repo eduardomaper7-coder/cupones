@@ -139,8 +139,11 @@
         inner.classList.add("flipped");
         root.querySelector("#msg").textContent="¡Has conseguido un pase!";
         setTimeout(()=>launchConfetti(),1200);
-        setTimeout(()=>popupCount("€ ganados",6,"€",()=>popupCount("Coins",1000,"",()=>{
-          state.euros=6;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
+
+        // Premio entre 1€ y 2€
+        const cartaPremio = (Math.random() < 0.5 ? 1 : 2);
+        setTimeout(()=>popupCount("€ ganados",cartaPremio,"€",()=>popupCount("Coins",1000,"",()=>{
+          state.euros=cartaPremio;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
       });
     }
     root.querySelector("#next").addEventListener("click",()=>{state.step=1;setProgress();screenWheel();});
@@ -161,19 +164,28 @@
     spinBtn.addEventListener("click",()=>{
       if(spinning||state.coins<500)return alert("No tienes coins suficientes");
       state.coins-=500;setStats();
-      spinning=true;const seg=360/PRIZES.length;const idx=Math.floor(Math.random()*PRIZES.length);
-      const prizeValue=parseInt(PRIZES[idx]);
-      // Ajustar premio real para mantener rango
-      let total=state.euros+prizeValue;
-      if(total>=7) total=6.90;
-      if(total<=5.50) total=5.60;
-      state.euros=total;setStats();
 
+      // Calcular cuánto falta para llegar al rango 5.50 - 7 €
+      const minNecesario = 5.50 - state.euros;
+      const maxNecesario = 7.00 - state.euros;
+
+      // Elegir un premio que esté dentro del rango posible
+      let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
+      if(posibles.length===0) posibles=[Math.max(minNecesario,2)]; // seguridad
+      let premioReal = posibles[Math.floor(Math.random()*posibles.length)];
+
+      // Forzar que la flecha caiga en esa casilla
+      const idx = PRIZES.findIndex(p => parseInt(p) === premioReal);
+
+      state.euros += premioReal; // acumular total
+      setStats();
+
+      const seg=360/PRIZES.length;
       const target=360*6+(360-(idx*seg+seg/2));
       const start=performance.now();const dur=4200;const startA=angle;
       function tick(t){const p=Math.min(1,(t-start)/dur);angle=startA+(target-startA)*(1-Math.pow(1-p,3));wheel.style.transform=`rotate(${angle}deg)`;if(p<1)requestAnimationFrame(tick);else done();}
       requestAnimationFrame(tick);
-      function done(){spinning=false;showPrize(PRIZES[idx]);}
+      function done(){spinning=false;showPrize(premioReal);}
     });
     setProgress();return mount(root);
   }
@@ -192,7 +204,7 @@
     const ov=document.createElement("div");ov.className="overlay";
     ov.innerHTML=`<div class="bigbox">
       <div style="font-size:26px;font-weight:900;color:#b91c1c;margin-bottom:12px">¡PREMIO OBTENIDO!</div>
-      <div style="font-size:38px;font-weight:900;color:#111;margin:20px 0">${prize}</div>
+      <div style="font-size:38px;font-weight:900;color:#111;margin:20px 0">${prize}€</div>
       <div><a href="reserva.html" class="btn-red">Siguiente ➜</a></div>
     </div>`;
     document.body.appendChild(ov);
