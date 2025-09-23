@@ -36,7 +36,9 @@
   <h1>Confirmar reserva</h1>
   <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
   <div class="resumen" id="resumen"></div>
-  <form id="form" method="POST" action="https://script.google.com/macros/s/AKfycbyCS6tiAKHlG5XXKqVhSR_5Br9tJ-SN1U2UZ_4armDpc1NF8_sROPu-4i7JFQPLEiCI/exec" target="hidden_iframe">
+  <form id="form" method="POST" 
+        action="https://script.google.com/macros/s/AKfycbxF4frkEdSZr60xqJrxITGZ8iVPR3kmzLyBphhZsBCcW6KISA7fTEcPiUKbeN5xeCSR4Q/exec" 
+        target="hidden_iframe">
     <label>Elige día</label><input type="date" id="fecha" name="fecha" required>
     <label>Elige hora</label><input type="time" id="hora" name="hora" required>
     <label>Nombre</label><input type="text" name="nombre" required>
@@ -108,15 +110,18 @@
     document.getElementById("fecha").min=new Date().toISOString().split("T")[0];
   }
 
-  // Cuando el iframe cargue (respuesta del GAS)
+  // ✅ Confirmación al guardar en Google Sheets
   const iframe=document.querySelector("iframe[name=hidden_iframe]");
-  iframe.addEventListener("load",()=>{ alert("✅ Reserva guardada en Google Sheets"); });
+  iframe.addEventListener("load",()=>{ 
+    alert("✅ Reserva guardada en Google Sheets"); 
+  });
 
   initReserva();
 })();
 </script>
 </body>
 </html>
+
 
 
 
