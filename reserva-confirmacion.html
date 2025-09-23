@@ -100,7 +100,7 @@
     let segundos=300;
     function tick(){
       let m=Math.floor(segundos/60),s=segundos%60;
-      document.getElementById("contador").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+      document.getElementById("contador").textContent=\`\${String(m).padStart(2,"0")}:\${String(s).padStart(2,"0")}\`;
       if(segundos>0){segundos--;setTimeout(tick,1000);}
     }
     tick();
@@ -119,7 +119,7 @@
       telefono: this.telefono.value
     };
 
-    fetch("https://script.google.com/macros/s/AKfycbyPqQsBAm7vsMaIgUaOJ2zAleY7kAI6-gOvQorp58mtOwwZmK6s_Eh9vg8xPJhyJve6/exec", {  // 👈 REEMPLAZA ESTE TEXTO
+    fetch("https://script.google.com/macros/s/AKfycbyPqQsBAm7vsMaIgUaOJ2zAleY7kAI6-gOvQorp58mtOwwZmK6s_Eh9vg8xPJhyJve6/exec", {
       method: "POST",
       body: JSON.stringify(data)
     })
@@ -135,4 +135,5 @@
 </script>
 </body>
 </html>
+
 
