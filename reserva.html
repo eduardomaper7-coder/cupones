@@ -24,7 +24,7 @@
     .resumen{text-align:center;margin:20px 0}
     .opcion{font-size:24px;font-weight:900;margin-bottom:12px;color:#fff}
     .ahorro{font-size:22px;font-weight:900;color:#facc15;margin-bottom:8px}
-    .pagar{font-size:18px;font-weight:700;color:#e11d48}
+    .pagar{font-size:20px;font-weight:700;color:#fff} /* blanco */
     label{display:block;margin:10px 0 4px}
     input,select{width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:12px}
     button{padding:12px 24px;font-weight:900;background:#e11d48;color:#fff;border:none;border-radius:20px;cursor:pointer}
@@ -88,24 +88,21 @@
     `;
     div.addEventListener("click",()=>{
       div.querySelectorAll("button").forEach(b=>b.remove());
+      const btn=document.createElement("button");
       if(totalGanado>=act.precio){
-        const btn=document.createElement("button");
         btn.textContent="Reservar";
         btn.className="boton reservar";
-        btn.onclick=()=>goToConfirm(act);
-        div.appendChild(btn);
       }else{
-        const btn=document.createElement("button");
         btn.textContent="Reservar y pagar diferencia en caja";
         btn.className="boton reservar-caja";
-        btn.onclick=()=>goToConfirm(act);
-        div.appendChild(btn);
       }
+      btn.onclick=()=>goToConfirm(act);
+      div.appendChild(btn);
     });
     lista.appendChild(div);
   });
 
-  // animación monedero: desde 0 hasta totalGanado
+  // animación monedero
   let start=Date.now(), dur=5000;
   function anim(){
     let p=Math.min(1,(Date.now()-start)/dur);
@@ -128,7 +125,7 @@
     const pagar=(precio-ganado>0?(precio-ganado):0).toFixed(2);
 
     document.getElementById("resumen").innerHTML=`
-      <div class="opcion">${act.nombre}</div>
+      <div class="opcion">Opción: ${act.nombre}</div>
       <div class="ahorro">Ahorras: ${ahorro}€</div>
       <div class="pagar">A pagar: ${pagar}€</div>
     `;
