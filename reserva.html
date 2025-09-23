@@ -1,102 +1,83 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Promo Fitness — Reserva</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elige tu actividad</title>
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:#0a0a0a;color:#fff;}
-    .app{padding:20px;max-width:480px;margin:auto;}
-    h1{text-align:center;font-size:22px;margin-bottom:16px;background:linear-gradient(90deg,#fde68a,#f59e0b,#fde68a);-webkit-background-clip:text;color:transparent;}
-    .activity{background:#1f1f23;border:1px solid #3f3f46;border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.2s;}
-    .activity:hover{background:#2a2a2e;}
-    .price{font-weight:900;}
-    .red{color:#ef4444;}
-    .green{color:#22c55e;}
-    .btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f59e0b,#d97706);color:#111;font-weight:800;border:none;border-radius:12px;padding:12px 16px;box-shadow:0 6px 12px rgba(0,0,0,.4);cursor:pointer;font-size:16px;margin-top:8px;width:100%;text-align:center}
-    .hidden{display:none;}
-    .card{background:#fff;color:#111;border-radius:14px;padding:16px;margin-top:16px;text-align:center;font-weight:700;}
-    .selector{margin-top:16px;text-align:center;}
-    select{padding:8px;border-radius:8px;border:1px solid #ddd;font-size:16px;width:100%;}
+    body{margin:0;font-family:sans-serif;background:#111;color:#fff;padding:20px}
+    h1{text-align:center;font-size:22px}
+    h2{text-align:center;font-size:16px;font-weight:400;color:#ccc;margin-top:4px}
+    .actividad{border:2px solid #333;padding:12px;margin:12px 0;border-radius:12px;cursor:pointer}
+    .actividad .precio{font-weight:900;font-size:18px}
+    .precio.rojo{color:#e11d48}
+    .precio.verde{color:#16a34a}
+    .boton{margin-top:8px;padding:10px 20px;border:none;border-radius:20px;font-weight:900;cursor:pointer}
+    .reservar{background:#22c55e;color:#fff}
+    .reservar-caja{background:#dc2626;color:#fff}
+    .monedero{text-align:center;margin-top:30px;font-size:20px;font-weight:900;color:#facc15}
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Elige tu actividad</h1>
+  <h1>Elige tu actividad</h1>
+  <h2>Contamos con más de 100 centros afiliados cerca de ti.</h2>
 
-    <div class="activity" data-name="Clase de Yoga" data-price="15">
-      Clase de Yoga — <span class="price red">15€</span>
-      <div class="hidden action"></div>
-    </div>
-    <div class="activity" data-name="Acceso gimnasio" data-price="5.5">
-      Acceso gimnasio — <span class="price green">5.50€</span>
-      <div class="hidden action"></div>
-    </div>
-    <div class="activity" data-name="Clase de Pilates" data-price="15">
-      Clase de Pilates — <span class="price red">15€</span>
-      <div class="hidden action"></div>
-    </div>
-    <div class="activity" data-name="Clase de Zumba" data-price="15">
-      Clase de Zumba — <span class="price red">15€</span>
-      <div class="hidden action"></div>
-    </div>
-    <div class="activity" data-name="Entrenamiento funcional" data-price="15">
-      Entrenamiento funcional — <span class="price red">15€</span>
-      <div class="hidden action"></div>
-    </div>
-    <div class="activity" data-name="Clase de Danza" data-price="15">
-      Clase de Danza — <span class="price red">15€</span>
-      <div class="hidden action"></div>
-    </div>
+  <div id="actividades"></div>
+  <div class="monedero">Tu monedero: <span id="monedero">0€</span></div>
 
-    <div id="confirmBox" class="card hidden"></div>
-  </div>
+  <script>
+    const actividades = [
+      {nombre:"Clase de Yoga", precio:15},
+      {nombre:"Acceso gimnasio", precio:5.50},
+      {nombre:"Clase de Pilates", precio:15},
+      {nombre:"Clase de Zumba", precio:15},
+      {nombre:"Entrenamiento funcional", precio:15},
+      {nombre:"Clase de Danza", precio:15},
+    ];
 
-<script>
-(function(){
-  // Simulamos los euros ganados en juego.html
-  const eurosGanados = 6.20; // <-- puedes enlazar con localStorage si quieres
+    const totalGanado = parseFloat(localStorage.getItem("totalEuros")||"0");
+    const lista=document.getElementById("actividades");
 
-  const activities = document.querySelectorAll(".activity");
-  const confirmBox = document.getElementById("confirmBox");
-
-  activities.forEach(act=>{
-    act.addEventListener("click",()=>{
-      // Limpiar otras selecciones
-      document.querySelectorAll(".action").forEach(a=>{a.innerHTML="";a.classList.add("hidden");});
-      confirmBox.classList.add("hidden");
-
-      const name=act.dataset.name;
-      const price=parseFloat(act.dataset.price);
-      const action=act.querySelector(".action");
-      let btnText = price===5.5 ? "Reservar" : "Reservar y pagar diferencia en caja";
-
-      action.innerHTML=`<button class="btn">${btnText}</button>`;
-      action.classList.remove("hidden");
-
-      action.querySelector("button").addEventListener("click",()=>{
-        const ahorro = eurosGanados.toFixed(2);
-        let pagar = (price - eurosGanados);
-        if(pagar<0) pagar=0;
-
-        confirmBox.innerHTML=`
-          <div>Opción: ${name}</div>
-          <div>Ahorras: ${ahorro}€</div>
-          <div>A pagar: ${pagar.toFixed(2)}€</div>
-          <div class="selector">
-            <label>Reserva para:</label>
-            <select>
-              <option>Para mí</option>
-              <option>Para un amigo o familiar</option>
-            </select>
-          </div>
-        `;
-        confirmBox.classList.remove("hidden");
-        confirmBox.scrollIntoView({behavior:"smooth"});
+    actividades.forEach(act=>{
+      const div=document.createElement("div");
+      div.className="actividad";
+      div.innerHTML=`
+        <div>${act.nombre} — 
+          <span class="precio ${act.precio==5.5?"verde":"rojo"}">${act.precio}€</span>
+        </div>
+      `;
+      div.addEventListener("click",()=>{
+        // eliminar botones anteriores
+        div.querySelectorAll("button").forEach(b=>b.remove());
+        // agregar boton segun saldo
+        if(totalGanado>=act.precio){
+          const btn=document.createElement("button");
+          btn.textContent="Reservar";
+          btn.className="boton reservar";
+          btn.onclick=()=>{localStorage.setItem("actividad",act.nombre);localStorage.setItem("precio",act.precio);window.location="confirmacion.html";}
+          div.appendChild(btn);
+        }else{
+          const btn=document.createElement("button");
+          btn.textContent="Reservar y pagar diferencia en caja";
+          btn.className="boton reservar-caja";
+          btn.onclick=()=>{localStorage.setItem("actividad",act.nombre);localStorage.setItem("precio",act.precio);window.location="confirmacion.html";}
+          div.appendChild(btn);
+        }
       });
+      lista.appendChild(div);
     });
-  });
-})();
-</script>
+
+    // animación monedero
+    let start=Date.now();
+    let dur=5000;
+    function anim(){
+      let p=Math.min(1,(Date.now()-start)/dur);
+      let val=(totalGanado*p).toFixed(2);
+      document.getElementById("monedero").textContent=val+"€";
+      if(p<1)requestAnimationFrame(anim);
+    }
+    anim();
+  </script>
 </body>
 </html>
+
