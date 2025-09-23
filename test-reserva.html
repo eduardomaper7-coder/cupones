@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prueba Reserva</title>
+</head>
+<body style="font-family:sans-serif; background:#111; color:#fff; padding:20px;">
+
+  <h1>Formulario de Prueba</h1>
+  <form method="POST" 
+        action="https://script.google.com/macros/s/AKfycbxF4frkEdSZr60xqJrxITGZ8iVPR3kmzLyBphhZsBCcW6KISA7fTEcPiUKbeN5xeCSR4Q/exec" 
+        target="hidden_iframe">
+    
+    <label>Fecha:</label><br>
+    <input type="date" name="fecha" required><br><br>
+
+    <label>Hora:</label><br>
+    <input type="time" name="hora" required><br><br>
+
+    <label>Actividad:</label><br>
+    <input type="text" name="actividad" value="TEST" required><br><br>
+
+    <label>Nombre:</label><br>
+    <input type="text" name="nombre" required><br><br>
+
+    <label>Apellidos:</label><br>
+    <input type="text" name="apellidos" required><br><br>
+
+    <label>Teléfono:</label><br>
+    <input type="tel" name="telefono" required><br><br>
+
+    <button type="submit">Enviar Reserva</button>
+  </form>
+
+  <iframe name="hidden_iframe" style="display:none;"></iframe>
+
+  <script>
+    const iframe = document.querySelector("iframe[name=hidden_iframe]");
+    iframe.addEventListener("load", () => {
+      alert("✅ Datos enviados a Google Sheets");
+    });
+  </script>
+</body>
+</html>
