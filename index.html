@@ -48,31 +48,9 @@
     .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fff,#fde68a);border:3px solid #f59e0b;display:grid;place-items:center;font-weight:900;color:#7a4a00;font-size:14px;cursor:pointer}
     .slice-label{position:absolute;left:50%;top:50%;transform-origin:center;font-weight:900;font-size:18px;text-shadow:0 2px 4px rgba(0,0,0,.7);width:140px;text-align:center;color:#fff}
 
-    /* --- Buttons premium --- */
-    .btn-gold {
-      background: linear-gradient(to bottom, #000 0%, #333 100%);
-      border: 3px solid var(--gold);
-      border-radius: 50px;
-      padding: 12px 28px;
-      font-size: 18px;
-      font-weight: 900;
-      color: var(--gold);
-      text-shadow: 0 1px 1px #000;
-      box-shadow: 0 0 10px rgba(255,215,0,.7);
-      cursor: pointer;
-    }
-    .btn-red {
-      background: linear-gradient(to bottom, var(--red1) 0%, var(--red2) 100%);
-      border: 3px solid var(--gold);
-      border-radius: 50px;
-      padding: 14px 32px;
-      font-size: 20px;
-      font-weight: 900;
-      color: var(--gold);
-      text-shadow: 0 1px 1px #000;
-      box-shadow: 0 0 15px rgba(255,0,0,.7);
-      cursor: pointer;
-    }
+    /* --- Buttons --- */
+    .btn-gold {background: linear-gradient(to bottom, #000 0%, #333 100%);border: 3px solid var(--gold);border-radius: 50px;padding: 12px 28px;font-size: 18px;font-weight: 900;color: var(--gold);text-shadow: 0 1px 1px #000;box-shadow: 0 0 10px rgba(255,215,0,.7);cursor: pointer;}
+    .btn-red {background: linear-gradient(to bottom, var(--red1) 0%, var(--red2) 100%);border: 3px solid var(--gold);border-radius: 50px;padding: 14px 32px;font-size: 20px;font-weight: 900;color: var(--gold);text-shadow: 0 1px 1px #000;box-shadow: 0 0 15px rgba(255,0,0,.7);cursor: pointer;}
 
     /* --- Progress bar --- */
     .progress-wrap{position:fixed;left:8px;right:8px;bottom:8px;z-index:40}
@@ -141,10 +119,16 @@
         root.querySelector("#msg").textContent="¡Has conseguido un pase!";
         setTimeout(()=>launchConfetti(),1200);
 
-        // Premio entre 1 y 5 €
-        const cartaPremio = Math.floor(Math.random() * 5) + 1;
+        // 🔒 Amañado: cartas solo pueden dar 2 € o 5 €
+        const cartaPremio = Math.random()<0.5 ? 2 : 5;
+
         setTimeout(()=>popupCount("€ ganados",cartaPremio,"€",()=>popupCount("Coins",1000,"",()=>{
-          state.euros=cartaPremio;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
+          state.euros=cartaPremio;
+          state.coins=1000;
+          setStats();
+          localStorage.setItem("totalEuros", state.euros.toFixed(2));
+          root.querySelector("#next").disabled=false;
+        })),2000);
       });
     }
     root.querySelector("#next").addEventListener("click",()=>{state.step=1;setProgress();screenWheel();});
@@ -164,19 +148,11 @@
     let spinning=false;
     spinBtn.addEventListener("click",()=>{
       if(spinning||state.coins<500)return alert("No tienes coins suficientes");
-      state.coins-=500;setStats(); // solo bajamos coins ahora
+      state.coins-=500;setStats();
       spinning=true;
 
-      let premioReal;
-      if(state.euros===5){
-        premioReal=2; // regla especial si tiene 5 € de cartas
-      } else {
-        const minNecesario = 5.50 - state.euros;
-        const maxNecesario = 7.00 - state.euros;
-        let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
-        if(posibles.length===0) posibles=[2];
-        premioReal = posibles[Math.floor(Math.random()*posibles.length)];
-      }
+      // 🔒 Amañado: si cartas=5 → ruleta=2, si cartas=2 → ruleta=5
+      let premioReal = state.euros===5 ? 2 : 5;
 
       const idx = PRIZES.findIndex(p => parseInt(p) === premioReal);
 
@@ -194,8 +170,9 @@
 
       function done(){
         spinning=false;
-        state.euros += premioReal; // ✅ solo aquí actualizamos los €
+        state.euros += premioReal; // total siempre 7 €
         setStats();
+        localStorage.setItem("totalEuros", state.euros.toFixed(2));
         showPrize(premioReal);
       }
     });
@@ -228,5 +205,6 @@
 </script>
 </body>
 </html>
+
 
 
