@@ -119,15 +119,19 @@
       telefono: this.telefono.value
     };
 
-    fetch("https://script.google.com/macros/s/AKfycbyPqQsBAm7vsMaIgUaOJ2zAleY7kAI6-gOvQorp58mtOwwZmK6s_Eh9vg8xPJhyJve6/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbzWdVsTNLcHq2qum-6DUT1hPdXPJtmCz-VkMQBNyyA8zZZT5PfwAnjGZkI_30yHsBcpOw/exec", {
       method: "POST",
       body: JSON.stringify(data)
     })
     .then(r => r.text())
     .then(res => {
-      alert("✅ Reserva guardada en Google Sheets");
+      if(res.trim()==="OK"){
+        alert("✅ Reserva guardada en Google Sheets");
+      } else {
+        alert("⚠️ Respuesta inesperada: " + res);
+      }
     })
-    .catch(err => alert("❌ Error: "+err));
+    .catch(err => alert("❌ Error de red: " + err));
   };
 
   initReserva();
