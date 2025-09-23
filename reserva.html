@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserva de actividad</title>
+  <style>
+    body{margin:0;font-family:sans-serif;background:#111;color:#fff;padding:20px}
+    h1{text-align:center;font-size:22px}
+    h2{text-align:center;font-size:16px;font-weight:400;color:#ccc;margin-top:4px}
+    .actividad{border:2px solid #333;padding:12px;margin:12px 0;border-radius:12px;cursor:pointer}
+    .actividad .precio{font-weight:900;font-size:18px}
+    .precio.rojo{color:#e11d48}
+    .precio.verde{color:#16a34a}
+    .boton{margin-top:8px;padding:10px 20px;border:none;border-radius:20px;font-weight:900;cursor:pointer}
+    .reservar{background:#22c55e;color:#fff}
+    .reservar-caja{background:#dc2626;color:#fff}
+    .monedero{text-align:center;margin-top:30px;font-size:20px;font-weight:900;color:#facc15}
+
+    /* confirmación */
+    .hidden{display:none}
+    .contador-box{text-align:center;border:3px solid #facc15;padding:12px;border-radius:12px;margin:20px auto;width:180px;background:#1f1f1f;box-shadow:0 0 10px rgba(250,204,21,.5)}
+    .contador{font-size:32px;color:#facc15;font-weight:900}
+    .resumen{text-align:center;margin:20px 0}
+    .opcion{font-size:24px;font-weight:900;margin-bottom:12px;color:#fff}
+    .ahorro{font-size:22px;font-weight:900;color:#facc15;margin-bottom:8px}
+    .pagar{font-size:20px;font-weight:700;color:#fff} /* blanco */
+    label{display:block;margin:10px 0 4px}
+    input,select{width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:12px}
+    button{padding:12px 24px;font-weight:900;background:#e11d48;color:#fff;border:none;border-radius:20px;cursor:pointer}
+  </style>
+</head>
+<body>
+
+  <!-- Pantalla 1: RESERVA -->
+  <div id="screen-reserva">
+    <h1>Elige tu actividad</h1>
+    <h2>Contamos con más de 100 centros afiliados cerca de ti.</h2>
+    <div id="actividades"></div>
+    <div class="monedero">Tu monedero: <span id="monedero">0€</span></div>
+  </div>
+
+  <!-- Pantalla 2: CONFIRMACIÓN -->
+  <div id="screen-confirmacion" class="hidden">
+    <h1>Confirmar reserva</h1>
+    <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
+    <div class="resumen" id="resumen"></div>
+
+    <form id="form">
+      <label>Elige día</label>
+      <input type="date" id="fecha" name="fecha" required>
+      <label>Elige hora</label>
+      <input type="time" id="hora" name="hora" required>
+      <label>Nombre</label>
+      <input type="text" name="nombre" required>
+      <label>Apellidos</label>
+      <input type="text" name="apellidos" required>
+      <label>Teléfono (Te enviaremos por WhatsApp tus premios)</label>
+      <input type="tel" name="telefono" required>
+      <button type="submit">Confirmar reserva</button>
+    </form>
+  </div>
+
+<script>
+(function(){
+  // -------------------------------
+  // PANTALLA 1: RESERVA
+  // -------------------------------
+  const actividades = [
+    {nombre:"Clase de Yoga", precio:15},
+    {nombre:"Acceso gimnasio", precio:5.50},
+    {nombre:"Clase de Pilates", precio:15},
+    {nombre:"Clase de Zumba", precio:15},
+    {nombre:"Entrenamiento funcional", precio:15},
+    {nombre:"Clase de Danza", precio:15},
+  ];
+
+  const totalGanado = parseFloat(localStorage.getItem("totalEuros")||"0");
+  const lista=document.getElementById("actividades");
+
+  actividades.forEach(act=>{
+    const div=document.createElement("div");
+    div.className="actividad";
+    div.innerHTML=`
+      <div>${act.nombre} — 
+        <span class="precio ${act.precio==5.5?"verde":"rojo"}">${act.precio}€</span>
+      </div>
+    `;
+    div.addEventListener("click",()=>{
+      div.querySelectorAll("button").forEach(b=>b.remove());
+      const btn=document.createElement("button");
+      if(totalGanado>=act.precio){
+        btn.textContent="Reservar";
+        btn.className="boton reservar";
+      }else{
+        btn.textContent="Reservar y pagar diferencia en caja";
+        btn.className="boton reservar-caja";
+      }
+      btn.onclick=()=>goToConfirm(act);
+      div.appendChild(btn);
+    });
+    lista.appendChild(div);
+  });
+
+  // animación monedero
+  let start=Date.now(), dur=5000;
+  function anim(){
+    let p=Math.min(1,(Date.now()-start)/dur);
+    let val=(totalGanado*p).toFixed(2);
+    document.getElementById("monedero").textContent=val+"€";
+    if(p<1)requestAnimationFrame(anim);
+  }
+  anim();
+
+  // -------------------------------
+  // PANTALLA 2: CONFIRMACIÓN
+  // -------------------------------
+  function goToConfirm(act){
+    document.getElementById("screen-reserva").classList.add("hidden");
+    document.getElementById("screen-confirmacion").classList.remove("hidden");
+
+    const precio=act.precio;
+    const ganado=totalGanado;
+    const ahorro=Math.min(ganado,precio).toFixed(2);
+    const pagar=(precio-ganado>0?(precio-ganado):0).toFixed(2);
+
+    document.getElementById("resumen").innerHTML=`
+      <div class="opcion">Opción: ${act.nombre}</div>
+      <div class="ahorro">Ahorras: ${ahorro}€</div>
+      <div class="pagar">A pagar: ${pagar}€</div>
+    `;
+
+    // Contador 5 min
+    let segundos=300;
+    function tick(){
+      let m=Math.floor(segundos/60);
+      let s=segundos%60;
+      document.getElementById("contador").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+      if(segundos>0){segundos--;setTimeout(tick,1000);}
+    }
+    tick();
+
+    // fecha y hora límites
+    const fecha=document.getElementById("fecha");
+    const hoy=new Date();
+    const max=new Date();
+    max.setDate(hoy.getDate()+7);
+    fecha.min=hoy.toISOString().split("T")[0];
+    fecha.max=max.toISOString().split("T")[0];
+
+    // Validación y envío
+    document.getElementById("form").onsubmit=function(e){
+      e.preventDefault();
+      const f=new Date(fecha.value+"T"+document.getElementById("hora").value);
+      const dia=f.getDay();
+      const hora=f.getHours(), min=f.getMinutes();
+      let valido=false;
+
+      if(dia>=1 && dia<=5){ // lunes a viernes
+        if(hora>=10 && (hora<20 || (hora===20 && min<=30))) valido=true;
+      }else if(dia===6){ // sábado
+        if(hora>=10 && (hora<13 || (hora===13 && min<=30))) valido=true;
+      }else{
+        alert("Domingo cerrado");return;
+      }
+      if(!valido){alert("Hora no disponible");return;}
+
+      // Enviar a Google Sheets
+      fetch("TU_URL_DE_GOOGLE_SCRIPT",{
+        method:"POST",
+        body:new FormData(this)
+      }).then(r=>alert("Reserva confirmada ✅"))
+      .catch(err=>alert("Error al enviar"));
+    };
+  }
+})();
+</script>
+</body>
+</html>
