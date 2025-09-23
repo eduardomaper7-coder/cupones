@@ -48,7 +48,7 @@
 
 <script>
 (function(){
-  const euros = 7; // 🔒 siempre 7 €
+  const euros = 7; // siempre 7 €
   let actividadSel=null, precioSel=0;
 
   function show(id){
@@ -119,7 +119,7 @@
       telefono: this.telefono.value
     };
 
-    fetch("https://script.google.com/macros/s/AKfycbxVvTxxTJg_0rSflALtJ8rk3XC7oLlPH94HY2MtqyxL4sih7uEeoGmUa9PI6mzhzRTj0w/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbyEoYUVOg2DxiOohHHAuDToCNiGjfb7Ctsb5XIbBgzx6f8Uwy9V58Y99OpvLrKBvGrrOw/exec", {
       method: "POST",
       body: JSON.stringify(data)
     })
@@ -139,6 +139,7 @@
 </script>
 </body>
 </html>
+
 
 
 
