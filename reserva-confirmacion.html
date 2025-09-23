@@ -1,152 +1,121 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reserva con SheetDB</title>
-  <style>
-    body{margin:0;font-family:sans-serif;background:#111;color:#fff;min-height:100vh;padding:16px}
-    .actividad{border:2px solid #333;padding:12px;margin:12px 0;border-radius:12px;cursor:pointer}
-    .precio.rojo{color:#e11d48}
-    .precio.verde{color:#16a34a}
-    .monedero{text-align:center;margin-top:20px;font-size:20px;font-weight:900;color:#facc15}
-    .contador-box{text-align:center;border:3px solid #facc15;padding:12px;border-radius:12px;margin:20px auto;width:180px;background:#1f1f1f;box-shadow:0 0 10px rgba(250,204,21,.5)}
-    .contador{font-size:32px;color:#facc15;font-weight:900}
-    .resumen{text-align:center;margin:20px 0}
-    .opcion{font-size:24px;font-weight:900;margin-bottom:12px}
-    .ahorro{font-size:22px;font-weight:900;color:#facc15;margin-bottom:8px}
-    .pagar{font-size:20px;font-weight:700;color:#fff}
-    .btn{padding:12px 24px;border:none;border-radius:24px;font-weight:900;cursor:pointer}
-    .btn-red{background:linear-gradient(#ff4d4d,#b30000);color:#ffd700;border:2px solid #ffd700}
-    .hidden{display:none}
-  </style>
-</head>
-<body>
-
-<!-- Pantalla Reserva -->
-<div id="screen-reserva">
-  <h1>Elige tu actividad</h1>
-  <h2>Contamos con más de 100 centros afiliados cerca de ti.</h2>
-  <div id="actividades"></div>
-  <div class="monedero">Tu monedero: <span id="monedero">7.00€</span></div>
-</div>
-
-<!-- Pantalla Confirmación -->
-<div id="screen-confirmacion" class="hidden">
-  <h1>Confirmar reserva</h1>
-  <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
-  <div class="resumen" id="resumen"></div>
-
-  <form id="form">
-    <label>Elige día</label><br>
-    <input type="date" id="fecha" name="fecha" required><br><br>
-
-    <label>Elige hora</label><br>
-    <input type="time" id="hora" name="hora" required><br><br>
-
-    <label>Nombre</label><br>
-    <input type="text" id="nombre" name="nombre" required><br><br>
-
-    <label>Apellidos</label><br>
-    <input type="text" id="apellidos" name="apellidos" required><br><br>
-
-    <label>Teléfono (Te enviaremos por WhatsApp tus premios)</label><br>
-    <input type="tel" id="telefono" name="telefono" required><br><br>
-
-    <button type="submit" class="btn btn-red">Confirmar reserva</button>
-  </form>
-</div>
-
 <script>
 (function(){
-  const euros = 7; // siempre 7 €
-  let actividadSel=null, precioSel=0;
+  const actividades = [
+    {nombre:"Clase de Yoga", precio:15},
+    {nombre:"Acceso gimnasio", precio:5.50},
+    {nombre:"Clase de Pilates", precio:15},
+    {nombre:"Clase de Zumba", precio:15},
+    {nombre:"Entrenamiento funcional", precio:15},
+    {nombre:"Clase de Danza", precio:15},
+  ];
 
-  function show(id){
-    document.querySelectorAll("body>div").forEach(d=>d.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-  }
+  const totalGanado = 7; // siempre 7€
+  const lista=document.getElementById("actividades");
 
-  // RESERVA
-  function initReserva(){
-    const actividades=[
-      {nombre:"Clase de Yoga",precio:15},
-      {nombre:"Acceso gimnasio",precio:5.5},
-      {nombre:"Clase de Pilates",precio:15},
-      {nombre:"Clase de Zumba",precio:15},
-      {nombre:"Entrenamiento funcional",precio:15},
-      {nombre:"Clase de Danza",precio:15},
-    ];
-    const cont=document.getElementById("actividades");cont.innerHTML="";
-    actividades.forEach(a=>{
-      const div=document.createElement("div");
-      div.className="actividad";
-      div.innerHTML=`<div>${a.nombre} — <span class="precio ${a.precio==5.5?"verde":"rojo"}">${a.precio}€</span></div>`;
-      div.onclick=()=>{
-        div.querySelectorAll("button").forEach(b=>b.remove());
-        const btn=document.createElement("button");
-        btn.className="btn btn-red";
+  actividades.forEach(act=>{
+    const div=document.createElement("div");
+    div.className="actividad";
+    div.innerHTML=`<div>${act.nombre} — 
+        <span class="precio ${act.precio==5.5?"verde":"rojo"}">${act.precio}€</span>
+      </div>`;
+    div.addEventListener("click",()=>{
+      div.querySelectorAll("button").forEach(b=>b.remove());
+      const btn=document.createElement("button");
+      if(totalGanado>=act.precio){
         btn.textContent="Reservar";
-        btn.onclick=(e)=>{
-          e.preventDefault();
-          actividadSel=a.nombre;precioSel=a.precio;
-          show("screen-confirmacion");initConfirm();
-        };
-        div.appendChild(btn);
-      };
-      cont.appendChild(div);
+        btn.className="boton reservar";
+      }else{
+        btn.textContent="Reservar y pagar diferencia en caja";
+        btn.className="boton reservar-caja";
+      }
+      btn.onclick=()=>goToConfirm(act);
+      div.appendChild(btn);
     });
-    document.getElementById("monedero").textContent="7.00€";
+    lista.appendChild(div);
+  });
+
+  // animación monedero
+  let start=Date.now(), dur=5000;
+  function anim(){
+    let p=Math.min(1,(Date.now()-start)/dur);
+    let val=(totalGanado*p).toFixed(2);
+    document.getElementById("monedero").textContent=val+"€";
+    if(p<1)requestAnimationFrame(anim);
   }
+  anim();
 
-  // CONFIRMACION
-  function initConfirm(){
-    const ahorro = euros.toFixed(2);
-    const pagar = (precioSel - euros > 0 ? precioSel - euros : 0).toFixed(2);
+  function goToConfirm(act){
+    document.getElementById("screen-reserva").classList.add("hidden");
+    document.getElementById("screen-confirmacion").classList.remove("hidden");
+
+    const precio=act.precio;
+    const ganado=totalGanado;
+    const ahorro=Math.min(ganado,precio).toFixed(2);
+    const pagar=(precio-ganado>0?(precio-ganado):0).toFixed(2);
+
     document.getElementById("resumen").innerHTML=`
-      <div class="opcion">Opción: ${actividadSel}</div>
+      <div class="opcion">Opción: ${act.nombre}</div>
       <div class="ahorro">Ahorras: ${ahorro}€</div>
-      <div class="pagar">A pagar: ${pagar}€</div>`;
+      <div class="pagar">A pagar: ${pagar}€</div>
+    `;
 
+    // contador
     let segundos=300;
     function tick(){
-      let m=Math.floor(segundos/60),s=segundos%60;
+      let m=Math.floor(segundos/60), s=segundos%60;
       document.getElementById("contador").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
       if(segundos>0){segundos--;setTimeout(tick,1000);}
     }
     tick();
-    document.getElementById("fecha").min=new Date().toISOString().split("T")[0];
-  }
 
-  // Enviar a SheetDB
-  document.getElementById("form").addEventListener("submit", async function(e){
-    e.preventDefault();
+    // fecha límite
+    const fecha=document.getElementById("fecha");
+    const hoy=new Date();
+    const max=new Date();
+    max.setDate(hoy.getDate()+7);
+    fecha.min=hoy.toISOString().split("T")[0];
+    fecha.max=max.toISOString().split("T")[0];
 
-    const data = {
-      fecha: document.getElementById("fecha").value,
-      hora: document.getElementById("hora").value,
-      actividad: actividadSel,
-      nombre: document.getElementById("nombre").value,
-      apellidos: document.getElementById("apellidos").value,
-      telefono: document.getElementById("telefono").value
+    // envío al SheetDB
+    document.getElementById("form").onsubmit=async function(e){
+      e.preventDefault();
+
+      const f=new Date(fecha.value+"T"+document.getElementById("hora").value);
+      const dia=f.getDay();
+      const hora=f.getHours(), min=f.getMinutes();
+      let valido=false;
+
+      if(dia>=1 && dia<=5){
+        if(hora>=10 && (hora<20 || (hora===20 && min<=30))) valido=true;
+      }else if(dia===6){
+        if(hora>=10 && (hora<13 || (hora===13 && min<=30))) valido=true;
+      }else{
+        alert("Domingo cerrado");return;
+      }
+      if(!valido){alert("Hora no disponible");return;}
+
+      const data = {
+        fecha: fecha.value,
+        hora: document.getElementById("hora").value,
+        actividad: act.nombre,
+        nombre: this.nombre.value,
+        apellidos: this.apellidos.value,
+        telefono: this.telefono.value
+      };
+
+      try {
+        const res = await fetch("https://sheetdb.io/api/v1/55rfkpm3ogg4g", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ data })
+        });
+        const out = await res.json();
+        alert("✅ Reserva confirmada y guardada");
+      } catch(err){
+        alert("❌ Error al enviar: "+err);
+      }
     };
-
-    try {
-      let res = await fetch("https://sheetdb.io/api/v1/55rfkpm3ogg4g", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ data: data })
-      });
-      let out = await res.json();
-      alert("✅ Reserva guardada en Google Sheets");
-    } catch(err){
-      alert("❌ Error al guardar: " + err);
-    }
-  });
-
-  initReserva();
+  }
 })();
 </script>
-</body>
-</html>
 
