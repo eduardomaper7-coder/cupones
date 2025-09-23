@@ -25,16 +25,6 @@
     .card{width:100%;max-width:110px;height:160px;perspective:1000px;cursor:pointer}
     .card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;border-radius:16px;border:1px solid #3f3f46;transition:transform .8s}
     .card-inner.flipped{transform:rotateY(180deg)}
-    .card-inner.zoomed{
-      position:fixed;
-      inset:0;
-      margin:auto;
-      width:180px;
-      height:260px;
-      transform:rotateY(180deg) scale(1.2);
-      z-index:100;
-      transition:transform .8s;
-    }
     .card-face{position:absolute;inset:0;display:grid;place-items:center;backface-visibility:hidden;border-radius:16px}
     .card-back{color:#facc15;font-size:22px}
     .card-front{background:linear-gradient(135deg,#fde68a,#facc15);color:#111;transform:rotateY(180deg);font-weight:900;text-align:center;font-size:16px}
@@ -117,7 +107,7 @@
   // Confetti
   function launchConfetti(){
     const root=document.createElement("div");root.className="confetti";document.body.appendChild(root);
-    for(let i=0;i<160;i++){const s=document.createElement("span");
+    for(let i=0;i<120;i++){const s=document.createElement("span");
       s.style.left=Math.random()*100+"%";s.style.top="-10%";s.style.background=`hsl(${Math.random()*360} 90% 60%)`;
       s.style.animationDuration=(2+Math.random()*2)+'s';root.appendChild(s);setTimeout(()=>s.remove(),4200);}
     setTimeout(()=>root.remove(),4500);
@@ -147,11 +137,10 @@
         if(root.querySelector(".flipped"))return;
         const inner=el.querySelector(".card-inner");
         inner.classList.add("flipped");
-        setTimeout(()=>inner.classList.add("zoomed"),800);
         root.querySelector("#msg").textContent="¡Has conseguido un pase!";
-        setTimeout(()=>launchConfetti(),2000);
+        setTimeout(()=>launchConfetti(),1200);
         setTimeout(()=>popupCount("€ ganados",6,"€",()=>popupCount("Coins",1000,"",()=>{
-          state.euros=6;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),3000);
+          state.euros=6;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
       });
     }
     root.querySelector("#next").addEventListener("click",()=>{state.step=1;setProgress();screenWheel();});
@@ -174,7 +163,7 @@
       state.coins-=500;setStats();
       spinning=true;const seg=360/PRIZES.length;const idx=Math.floor(Math.random()*PRIZES.length);
       const prizeValue=parseInt(PRIZES[idx]);
-      // Ajustar premio real para no pasar los límites
+      // Ajustar premio real para mantener rango
       let total=state.euros+prizeValue;
       if(total>=7) total=6.90;
       if(total<=5.50) total=5.60;
