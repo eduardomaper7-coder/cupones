@@ -99,6 +99,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   const state={euros:0,coins:0,step:0};
   const stepsProgress=[30,70,100];
+  let angle=0;
 
   function setStats(){ $("#euros").textContent=state.euros.toFixed(2)+"€"; $("#coins").textContent=state.coins; }
   function setProgress(){ const v=stepsProgress[state.step]||0; $("#pbar").style.width=v+"%"; $("#ptxt").textContent="Progreso "+v+"%"; }
@@ -140,8 +141,8 @@
         root.querySelector("#msg").textContent="¡Has conseguido un pase!";
         setTimeout(()=>launchConfetti(),1200);
 
-        // Premio entre 1€ y 2€
-        const cartaPremio = (Math.random() < 0.5 ? 1 : 2);
+        // Premio entre 1 y 5 €
+        const cartaPremio = Math.floor(Math.random() * 5) + 1;
         setTimeout(()=>popupCount("€ ganados",cartaPremio,"€",()=>popupCount("Coins",1000,"",()=>{
           state.euros=cartaPremio;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
       });
@@ -160,32 +161,43 @@
       <div style="margin-top:18px;display:flex;justify-content:center"><button class="btn-red" id="spin">GIRAR YA</button></div>`;
     const wheel=root.querySelector("#wheel");const spinBtn=root.querySelector("#spin");
     buildWheel(wheel,PRIZES);
-    let spinning=false,angle=0;
+    let spinning=false;
     spinBtn.addEventListener("click",()=>{
       if(spinning||state.coins<500)return alert("No tienes coins suficientes");
-      state.coins-=500;setStats();
+      state.coins-=500;setStats(); // solo bajamos coins ahora
+      spinning=true;
 
-      // Calcular cuánto falta para llegar al rango 5.50 - 7 €
-      const minNecesario = 5.50 - state.euros;
-      const maxNecesario = 7.00 - state.euros;
+      let premioReal;
+      if(state.euros===5){
+        premioReal=2; // regla especial si tiene 5 € de cartas
+      } else {
+        const minNecesario = 5.50 - state.euros;
+        const maxNecesario = 7.00 - state.euros;
+        let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
+        if(posibles.length===0) posibles=[2];
+        premioReal = posibles[Math.floor(Math.random()*posibles.length)];
+      }
 
-      // Elegir un premio que esté dentro del rango posible
-      let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
-      if(posibles.length===0) posibles=[Math.max(minNecesario,2)]; // seguridad
-      let premioReal = posibles[Math.floor(Math.random()*posibles.length)];
-
-      // Forzar que la flecha caiga en esa casilla
       const idx = PRIZES.findIndex(p => parseInt(p) === premioReal);
 
-      state.euros += premioReal; // acumular total
-      setStats();
-
+      // Animación ruleta
       const seg=360/PRIZES.length;
       const target=360*6+(360-(idx*seg+seg/2));
       const start=performance.now();const dur=4200;const startA=angle;
-      function tick(t){const p=Math.min(1,(t-start)/dur);angle=startA+(target-startA)*(1-Math.pow(1-p,3));wheel.style.transform=`rotate(${angle}deg)`;if(p<1)requestAnimationFrame(tick);else done();}
+      function tick(t){
+        const p=Math.min(1,(t-start)/dur);
+        angle=startA+(target-startA)*(1-Math.pow(1-p,3));
+        wheel.style.transform=`rotate(${angle}deg)`;
+        if(p<1)requestAnimationFrame(tick);else done();
+      }
       requestAnimationFrame(tick);
-      function done(){spinning=false;showPrize(premioReal);}
+
+      function done(){
+        spinning=false;
+        state.euros += premioReal; // ✅ solo aquí actualizamos los €
+        setStats();
+        showPrize(premioReal);
+      }
     });
     setProgress();return mount(root);
   }
@@ -216,5 +228,4 @@
 </script>
 </body>
 </html>
-
 
