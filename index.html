@@ -25,7 +25,16 @@
     .card{width:100%;max-width:110px;height:160px;perspective:1000px;cursor:pointer}
     .card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;border-radius:16px;border:1px solid #3f3f46;transition:transform .8s}
     .card-inner.flipped{transform:rotateY(180deg)}
-    .card-inner.zoomed{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotateY(180deg) scale(1.6);z-index:100;transition:transform .8s}
+    .card-inner.zoomed{
+      position:fixed;
+      inset:0;
+      margin:auto;
+      width:180px;
+      height:260px;
+      transform:rotateY(180deg) scale(1.2);
+      z-index:100;
+      transition:transform .8s;
+    }
     .card-face{position:absolute;inset:0;display:grid;place-items:center;backface-visibility:hidden;border-radius:16px}
     .card-back{color:#facc15;font-size:22px}
     .card-front{background:linear-gradient(135deg,#fde68a,#facc15);color:#111;transform:rotateY(180deg);font-weight:900;text-align:center;font-size:16px}
@@ -74,6 +83,12 @@
       box-shadow: 0 0 15px rgba(255,0,0,.7);
       cursor: pointer;
     }
+
+    /* --- Progress bar --- */
+    .progress-wrap{position:fixed;left:8px;right:8px;bottom:8px;z-index:40}
+    .progress{height:8px;border-radius:999px;overflow:hidden;background:#27272a}
+    .progress>div{height:100%;background:linear-gradient(90deg,#facc15,#f59e0b);width:0}
+    .progress-txt{text-align:center;font-size:11px;color:#d4d4d8;margin-top:4px}
   </style>
 </head>
 <body>
@@ -84,11 +99,19 @@
 
   <main id="screen" class="app"></main>
 
+  <div class="progress-wrap">
+    <div class="progress"><div id="pbar"></div></div>
+    <div class="progress-txt" id="ptxt">Progreso 0%</div>
+  </div>
+
 <script>
 (function(){
   const $=(s,r=document)=>r.querySelector(s);
-  const state={euros:0,coins:0};
+  const state={euros:0,coins:0,step:0};
+  const stepsProgress=[30,70,100];
+
   function setStats(){ $("#euros").textContent=state.euros.toFixed(2)+"€"; $("#coins").textContent=state.coins; }
+  function setProgress(){ const v=stepsProgress[state.step]||0; $("#pbar").style.width=v+"%"; $("#ptxt").textContent="Progreso "+v+"%"; }
   function mount(node){const scr=$("#screen");scr.innerHTML="";scr.appendChild(node);return node;}
 
   // Confetti
@@ -131,15 +154,15 @@
           state.euros=6;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),3000);
       });
     }
-    root.querySelector("#next").addEventListener("click",()=>screenWheel());
-    return mount(root);
+    root.querySelector("#next").addEventListener("click",()=>{state.step=1;setProgress();screenWheel();});
+    setProgress();return mount(root);
   }
 
   // Screen Wheel
   const PRIZES=["2€","5€","10€","15€","20€","25€"];
   function screenWheel(){
     const root=document.createElement("div");
-    root.innerHTML=`<div style="text-align:center;font-size:20px;font-weight:900;margin-bottom:6px">¡Gira la ruleta!</div>
+    root.innerHTML=`<div style="text-align:center;font-size:28px;font-weight:900;margin-bottom:6px;text-shadow:0 2px 4px rgba(0,0,0,.6)">¡Gira la ruleta!</div>
       <div style="text-align:center;color:#d4d4d8;margin-bottom:16px;font-size:14px">Coste: 500 coins</div>
       <div class="wheel-wrap"><div class="arrow"></div><div class="wheel" id="wheel"><div class="hub">GIRAR</div></div></div>
       <div style="margin-top:18px;display:flex;justify-content:center"><button class="btn-red" id="spin">GIRAR YA</button></div>`;
@@ -150,13 +173,20 @@
       if(spinning||state.coins<500)return alert("No tienes coins suficientes");
       state.coins-=500;setStats();
       spinning=true;const seg=360/PRIZES.length;const idx=Math.floor(Math.random()*PRIZES.length);
+      const prizeValue=parseInt(PRIZES[idx]);
+      // Ajustar premio real para no pasar los límites
+      let total=state.euros+prizeValue;
+      if(total>=7) total=6.90;
+      if(total<=5.50) total=5.60;
+      state.euros=total;setStats();
+
       const target=360*6+(360-(idx*seg+seg/2));
       const start=performance.now();const dur=4200;const startA=angle;
       function tick(t){const p=Math.min(1,(t-start)/dur);angle=startA+(target-startA)*(1-Math.pow(1-p,3));wheel.style.transform=`rotate(${angle}deg)`;if(p<1)requestAnimationFrame(tick);else done();}
       requestAnimationFrame(tick);
       function done(){spinning=false;showPrize(PRIZES[idx]);}
     });
-    return mount(root);
+    setProgress();return mount(root);
   }
 
   function buildWheel(el,labels){
@@ -180,7 +210,7 @@
   }
 
   // Init
-  setStats();screenCards();
+  setStats();setProgress();screenCards();
 })();
 </script>
 </body>
