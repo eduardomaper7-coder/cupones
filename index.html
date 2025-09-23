@@ -1,199 +1,232 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Promo Fitness — Juego Completo</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Promo Fitness — Juego</title>
   <style>
-    body{margin:0;font-family:sans-serif;background:#111;color:#fff;min-height:100vh;padding:16px}
-    .hidden{display:none}
-    h1,h2{text-align:center}
-    .btn{padding:12px 24px;border:none;border-radius:24px;font-weight:900;cursor:pointer}
-    .btn-gold{background:linear-gradient(#222,#000);color:#ffd700;border:2px solid #ffd700}
-    .btn-red{background:linear-gradient(#ff4d4d,#b30000);color:#ffd700;border:2px solid #ffd700}
-    .top{display:flex;justify-content:center;gap:12px;margin-bottom:12px}
-    .ticket,.coins{background:#fff;color:#333;border-radius:12px;padding:6px 12px;font-weight:700}
+    :root{
+      --gold:#ffd700;
+      --red1:#ff4d4d;
+      --red2:#b30000;
+    }
+    html,body{margin:0;height:100%;background:linear-gradient(#000,#0b0b0b);color:#fff;font-family:system-ui,Roboto,sans-serif}
+    .app{padding:76px 12px 88px;min-height:100dvh}
+
+    /* --- Top markers --- */
+    .top{position:fixed;top:8px;left:8px;right:8px;display:flex;gap:8px;align-items:center;z-index:40;flex-wrap:wrap;justify-content:center}
+    .ticket,.coins{background:#fff;color:#7c5a00;border:2px solid var(--gold);border-radius:12px;padding:6px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 0 12px rgba(250,204,21,.8),0 0 24px rgba(239,68,68,.6);font-size:18px}
+    .coins{border-radius:999px}
+    .coins .badge{width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;font-size:18px}
+
+    /* --- Cards --- */
+    .title{text-align:center;font-weight:900;font-size:22px;background:linear-gradient(90deg,#fde68a,#f59e0b);-webkit-background-clip:text;color:transparent;margin-bottom:16px;text-shadow:0 2px 6px rgba(234,179,8,.45);}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:12px;justify-items:center}
     .card{width:100%;max-width:110px;height:160px;perspective:1000px;cursor:pointer}
-    .card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;border-radius:16px;border:1px solid #444;transition:transform .8s}
+    .card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;border-radius:16px;border:1px solid #3f3f46;transition:transform .8s}
     .card-inner.flipped{transform:rotateY(180deg)}
     .card-face{position:absolute;inset:0;display:grid;place-items:center;backface-visibility:hidden;border-radius:16px}
     .card-back{color:#facc15;font-size:22px}
     .card-front{background:linear-gradient(135deg,#fde68a,#facc15);color:#111;transform:rotateY(180deg);font-weight:900;text-align:center;font-size:16px}
+    .msg{text-align:center;margin-top:16px;font-weight:800;color:#fde68a}
+    .next-fixed{position:fixed;left:0;right:0;bottom:70px;display:flex;justify-content:center;z-index:30}
+
+    /* --- Overlay / Popups --- */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;z-index:200;animation:fade .2s}
+    .bigbox{background:#fff;color:#1f2937;border:4px solid var(--gold);border-radius:20px;padding:30px;box-shadow:0 0 25px var(--gold);font-weight:900;text-align:center;font-size:22px;max-width:90%}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+
+    /* --- Confetti --- */
+    .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:150}
+    .confetti span{position:absolute;width:8px;height:8px;animation:fall linear forwards;will-change:transform}
+    @keyframes fall{to{transform:translateY(120vh) rotate(720deg);opacity:.9}}
+
+    /* --- Wheel --- */
     .wheel-wrap{margin:20px auto;width:90vw;max-width:320px;aspect-ratio:1;position:relative;display:flex;justify-content:center;align-items:center}
-    .wheel{position:absolute;inset:0;border:6px solid #ffd700;border-radius:50%;overflow:hidden;background:#27272a;box-shadow:0 0 30px 10px rgba(250,204,21,0.6)}
+    .wheel{position:absolute;inset:0;border:6px solid var(--gold);border-radius:50%;overflow:hidden;background:#27272a;box-shadow:0 0 30px 10px rgba(250,204,21,0.6),0 0 60px 20px rgba(250,204,21,0.4)}
     .arrow{position:absolute;left:50%;transform:translateX(-50%);top:-12px;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:28px solid #fbbf24;z-index:2}
     .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fff,#fde68a);border:3px solid #f59e0b;display:grid;place-items:center;font-weight:900;color:#7a4a00;font-size:14px;cursor:pointer}
     .slice-label{position:absolute;left:50%;top:50%;transform-origin:center;font-weight:900;font-size:18px;text-shadow:0 2px 4px rgba(0,0,0,.7);width:140px;text-align:center;color:#fff}
-    .actividad{border:2px solid #333;padding:12px;margin:12px 0;border-radius:12px;cursor:pointer}
-    .precio.rojo{color:#e11d48}
-    .precio.verde{color:#16a34a}
-    .monedero{text-align:center;margin-top:20px;font-size:20px;font-weight:900;color:#facc15}
-    .contador-box{text-align:center;border:3px solid #facc15;padding:12px;border-radius:12px;margin:20px auto;width:180px;background:#1f1f1f;box-shadow:0 0 10px rgba(250,204,21,.5)}
-    .contador{font-size:32px;color:#facc15;font-weight:900}
-    .resumen{text-align:center;margin:20px 0}
-    .opcion{font-size:24px;font-weight:900;margin-bottom:12px}
-    .ahorro{font-size:22px;font-weight:900;color:#facc15;margin-bottom:8px}
-    .pagar{font-size:20px;font-weight:700;color:#fff}
+
+    /* --- Buttons premium --- */
+    .btn-gold {
+      background: linear-gradient(to bottom, #000 0%, #333 100%);
+      border: 3px solid var(--gold);
+      border-radius: 50px;
+      padding: 12px 28px;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 1px 1px #000;
+      box-shadow: 0 0 10px rgba(255,215,0,.7);
+      cursor: pointer;
+    }
+    .btn-red {
+      background: linear-gradient(to bottom, var(--red1) 0%, var(--red2) 100%);
+      border: 3px solid var(--gold);
+      border-radius: 50px;
+      padding: 14px 32px;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 1px 1px #000;
+      box-shadow: 0 0 15px rgba(255,0,0,.7);
+      cursor: pointer;
+    }
+
+    /* --- Progress bar --- */
+    .progress-wrap{position:fixed;left:8px;right:8px;bottom:8px;z-index:40}
+    .progress{height:8px;border-radius:999px;overflow:hidden;background:#27272a}
+    .progress>div{height:100%;background:linear-gradient(90deg,#facc15,#f59e0b);width:0}
+    .progress-txt{text-align:center;font-size:11px;color:#d4d4d8;margin-top:4px}
   </style>
 </head>
 <body>
+  <div class="top">
+    <div class="ticket"><span style="font-weight:600;">€ ganados</span><span id="euros" style="font-weight:900;">0€</span></div>
+    <div class="coins"><div class="badge">💰</div><div id="coins" style="font-weight:900;color:#7c5a00">0</div></div>
+  </div>
 
-<!-- Pantalla Cartas -->
-<div id="screen-cartas">
-  <div class="top"><div class="ticket">€ ganados: <span id="euros">0€</span></div><div class="coins">Coins: <span id="coins">0</span></div></div>
-  <h1>Elige bien, tu premio te espera detrás de una carta</h1>
-  <div class="cards" id="cards"></div>
-  <div style="text-align:center;margin-top:20px"><button class="btn btn-gold" id="to-ruleta" disabled>Siguiente ➜</button></div>
-</div>
+  <main id="screen" class="app"></main>
 
-<!-- Pantalla Ruleta -->
-<div id="screen-ruleta" class="hidden">
-  <div class="top"><div class="ticket">€ ganados: <span id="euros2">0€</span></div><div class="coins">Coins: <span id="coins2">0</span></div></div>
-  <h1>¡Gira la ruleta!</h1>
-  <div class="wheel-wrap"><div class="arrow"></div><div class="wheel" id="wheel"><div class="hub">GIRAR</div></div></div>
-  <div style="text-align:center;margin-top:20px"><button class="btn btn-red" id="spin">GIRAR YA</button></div>
-</div>
-
-<!-- Pantalla Reserva -->
-<div id="screen-reserva" class="hidden">
-  <h1>Elige tu actividad</h1>
-  <h2>Contamos con más de 100 centros afiliados cerca de ti.</h2>
-  <div id="actividades"></div>
-  <div class="monedero">Tu monedero: <span id="monedero">0€</span></div>
-</div>
-
-<!-- Pantalla Confirmación -->
-<div id="screen-confirmacion" class="hidden">
-  <h1>Confirmar reserva</h1>
-  <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
-  <div class="resumen" id="resumen"></div>
-  <form id="form">
-    <label>Elige día</label><input type="date" id="fecha" name="fecha" required>
-    <label>Elige hora</label><input type="time" id="hora" name="hora" required>
-    <label>Nombre</label><input type="text" name="nombre" required>
-    <label>Apellidos</label><input type="text" name="apellidos" required>
-    <label>Teléfono (Te enviaremos por WhatsApp tus premios)</label><input type="tel" name="telefono" required>
-    <button type="submit" class="btn btn-red">Confirmar reserva</button>
-  </form>
-</div>
+  <div class="progress-wrap">
+    <div class="progress"><div id="pbar"></div></div>
+    <div class="progress-txt" id="ptxt">Progreso 0%</div>
+  </div>
 
 <script>
 (function(){
-  let euros=0, coins=0, actividadSel=null, precioSel=0;
+  const $=(s,r=document)=>r.querySelector(s);
+  const state={euros:0,coins:0,step:0};
+  const stepsProgress=[30,70,100];
+  let angle=0;
 
-  function show(id){
-    document.querySelectorAll("body>div").forEach(d=>d.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
+  function setStats(){ $("#euros").textContent=state.euros.toFixed(2)+"€"; $("#coins").textContent=state.coins; }
+  function setProgress(){ const v=stepsProgress[state.step]||0; $("#pbar").style.width=v+"%"; $("#ptxt").textContent="Progreso "+v+"%"; }
+  function mount(node){const scr=$("#screen");scr.innerHTML="";scr.appendChild(node);return node;}
+
+  // Confetti
+  function launchConfetti(){
+    const root=document.createElement("div");root.className="confetti";document.body.appendChild(root);
+    for(let i=0;i<120;i++){const s=document.createElement("span");
+      s.style.left=Math.random()*100+"%";s.style.top="-10%";s.style.background=`hsl(${Math.random()*360} 90% 60%)`;
+      s.style.animationDuration=(2+Math.random()*2)+'s';root.appendChild(s);setTimeout(()=>s.remove(),4200);}
+    setTimeout(()=>root.remove(),4500);
   }
-  function setStats(){document.getElementById("euros").textContent=euros+"€";document.getElementById("coins").textContent=coins;document.getElementById("euros2").textContent=euros+"€";document.getElementById("coins2").textContent=coins;}
 
-  // CARTAS
-  const cardsDiv=document.getElementById("cards");
-  for(let i=0;i<6;i++){
-    const c=document.createElement("div");c.className="card";
-    c.innerHTML=`<div class="card-inner"><div class="card-face card-back">✨</div><div class="card-face card-front">Premio</div></div>`;
-    cardsDiv.appendChild(c);
-    c.addEventListener("click",()=>{
-      if(cardsDiv.querySelector(".flipped"))return;
-      c.querySelector(".card-inner").classList.add("flipped");
-      const premio=Math.floor(Math.random()*5)+1; // 1-5€
-      euros=premio;coins=1000;setStats();
-      document.getElementById("to-ruleta").disabled=false;
+  // Popup count
+  function popupCount(label,target,suf,cb){
+    const ov=document.createElement("div");ov.className="overlay";
+    ov.innerHTML=`<div class="bigbox"><div style="font-size:18px;color:#475569">${label}</div><div id="count" style="font-size:36px;color:#a16207">0${suf}</div></div>`;
+    document.body.appendChild(ov);
+    const count=ov.querySelector("#count");const start=performance.now();const dur=1200;
+    function tick(t){const p=Math.min(1,(t-start)/dur);const v=Math.round(target*p);count.textContent=v+suf;
+      if(p<1)requestAnimationFrame(tick);else setTimeout(()=>{ov.remove();cb&&cb();},600);}
+    requestAnimationFrame(tick);
+  }
+
+  // Screen Cards
+  function screenCards(){
+    const root=document.createElement("div");
+    root.innerHTML=`<div class="title">Elige bien, tu premio te espera detrás de una carta</div><div class="cards" id="cards"></div><div class="msg" id="msg"></div><div class="next-fixed"><button class="btn-gold" id="next" disabled>Siguiente ➜</button></div>`;
+    const wrap=root.querySelector("#cards");
+    for(let i=0;i<6;i++){
+      const el=document.createElement("div");el.className="card";
+      el.innerHTML=`<div class="card-inner"><div class="card-face card-back">✨</div><div class="card-face card-front"><div>Pase gratuito<br>FITNESS</div></div></div>`;
+      wrap.appendChild(el);
+      el.addEventListener("click",()=>{
+        if(root.querySelector(".flipped"))return;
+        const inner=el.querySelector(".card-inner");
+        inner.classList.add("flipped");
+        root.querySelector("#msg").textContent="¡Has conseguido un pase!";
+        setTimeout(()=>launchConfetti(),1200);
+
+        // Premio entre 1 y 5 €
+        const cartaPremio = Math.floor(Math.random() * 5) + 1;
+        setTimeout(()=>popupCount("€ ganados",cartaPremio,"€",()=>popupCount("Coins",1000,"",()=>{
+          state.euros=cartaPremio;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
+      });
+    }
+    root.querySelector("#next").addEventListener("click",()=>{state.step=1;setProgress();screenWheel();});
+    setProgress();return mount(root);
+  }
+
+  // Screen Wheel
+  const PRIZES=["2€","5€","10€","15€","20€","25€"];
+  function screenWheel(){
+    const root=document.createElement("div");
+    root.innerHTML=`<div style="text-align:center;font-size:28px;font-weight:900;margin-bottom:6px;text-shadow:0 2px 4px rgba(0,0,0,.6)">¡Gira la ruleta!</div>
+      <div style="text-align:center;color:#d4d4d8;margin-bottom:16px;font-size:14px">Coste: 500 coins</div>
+      <div class="wheel-wrap"><div class="arrow"></div><div class="wheel" id="wheel"><div class="hub">GIRAR</div></div></div>
+      <div style="margin-top:18px;display:flex;justify-content:center"><button class="btn-red" id="spin">GIRAR YA</button></div>`;
+    const wheel=root.querySelector("#wheel");const spinBtn=root.querySelector("#spin");
+    buildWheel(wheel,PRIZES);
+    let spinning=false;
+    spinBtn.addEventListener("click",()=>{
+      if(spinning||state.coins<500)return alert("No tienes coins suficientes");
+      state.coins-=500;setStats(); // solo bajamos coins ahora
+      spinning=true;
+
+      let premioReal;
+      if(state.euros===5){
+        premioReal=2; // regla especial si tiene 5 € de cartas
+      } else {
+        const minNecesario = 5.50 - state.euros;
+        const maxNecesario = 7.00 - state.euros;
+        let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
+        if(posibles.length===0) posibles=[2];
+        premioReal = posibles[Math.floor(Math.random()*posibles.length)];
+      }
+
+      const idx = PRIZES.findIndex(p => parseInt(p) === premioReal);
+
+      // Animación ruleta
+      const seg=360/PRIZES.length;
+      const target=360*6+(360-(idx*seg+seg/2));
+      const start=performance.now();const dur=4200;const startA=angle;
+      function tick(t){
+        const p=Math.min(1,(t-start)/dur);
+        angle=startA+(target-startA)*(1-Math.pow(1-p,3));
+        wheel.style.transform=`rotate(${angle}deg)`;
+        if(p<1)requestAnimationFrame(tick);else done();
+      }
+      requestAnimationFrame(tick);
+
+      function done(){
+        spinning=false;
+        state.euros += premioReal; // ✅ solo aquí actualizamos los €
+        setStats();
+        showPrize(premioReal);
+      }
     });
+    setProgress();return mount(root);
   }
-  document.getElementById("to-ruleta").onclick=()=>show("screen-ruleta");
 
-  // RULETA
-  const PRIZES=["2","5","10","15","20","25"];
-  const wheel=document.getElementById("wheel");
-  function buildWheel(){
-    const n=PRIZES.length,seg=360/n;
-    let stops=[];for(let i=0;i<n;i++){stops.push(`${i%2?"#fde68a":"#fff"} ${i*seg}deg ${(i+1)*seg}deg`);}
-    wheel.style.background=`conic-gradient(${stops.join(",")})`;
-    wheel.querySelectorAll(".slice-label").forEach(n=>n.remove());
+  function buildWheel(el,labels){
+    const n=labels.length;const seg=360/n;
+    let stops=[];for(let i=0;i<n;i++){const a0=i*seg,a1=(i+1)*seg;stops.push(`${i%2?"#fde68a":"#fff"} ${a0}deg ${a1}deg`);}
+    el.style.background=`conic-gradient(${stops.join(",")})`;
+    el.querySelectorAll(".slice-label").forEach(n=>n.remove());
     for(let i=0;i<n;i++){const part=document.createElement("div");part.className="slice-label";
       part.style.transform=`translate(-50%,-50%) rotate(${i*seg+seg/2}deg) translateY(-120px)`;
-      part.textContent=PRIZES[i]+"€";wheel.appendChild(part);}
-  }
-  buildWheel();
-  let angle=0;
-  document.getElementById("spin").onclick=()=>{
-    if(coins<500)return alert("No tienes coins suficientes");
-    coins-=500;setStats();
-    let premio;
-    if(euros===5){premio=2;}
-    else{
-      const min=5.5-euros,max=7-euros;
-      let posibles=PRIZES.map(Number).filter(v=>v>=min&&v<=max);
-      if(!posibles.length)posibles=[2];
-      premio=posibles[Math.floor(Math.random()*posibles.length)];
-    }
-    const idx=PRIZES.indexOf(String(premio));
-    const seg=360/PRIZES.length;
-    const target=360*6+(360-(idx*seg+seg/2));
-    const start=performance.now(),dur=4200,startA=angle;
-    function tick(t){
-      const p=Math.min(1,(t-start)/dur);
-      angle=startA+(target-startA)*(1-Math.pow(1-p,3));
-      wheel.style.transform=`rotate(${angle}deg)`;
-      if(p<1)requestAnimationFrame(tick);else finish();
-    }
-    requestAnimationFrame(tick);
-    function finish(){
-      euros+=premio;setStats();
-      show("screen-reserva");
-      initReserva();
-    }
-  };
-
-  // RESERVA
-  function initReserva(){
-    const actividades=[
-      {nombre:"Clase de Yoga",precio:15},
-      {nombre:"Acceso gimnasio",precio:5.5},
-      {nombre:"Clase de Pilates",precio:15},
-      {nombre:"Clase de Zumba",precio:15},
-      {nombre:"Entrenamiento funcional",precio:15},
-      {nombre:"Clase de Danza",precio:15},
-    ];
-    const cont=document.getElementById("actividades");cont.innerHTML="";
-    actividades.forEach(a=>{
-      const div=document.createElement("div");
-      div.className="actividad";
-      div.innerHTML=`<div>${a.nombre} — <span class="precio ${a.precio==5.5?"verde":"rojo"}">${a.precio}€</span></div>`;
-      div.onclick=()=>{
-        div.querySelectorAll("button").forEach(b=>b.remove());
-        const btn=document.createElement("button");
-        btn.className="btn "+(euros>=a.precio?"btn-gold":"btn-red");
-        btn.textContent=euros>=a.precio?"Reservar":"Reservar y pagar diferencia en caja";
-        btn.onclick=()=>{
-          actividadSel=a.nombre;precioSel=a.precio;
-          show("screen-confirmacion");initConfirm();
-        };
-        div.appendChild(btn);
-      };
-      cont.appendChild(div);
-    });
-    // monedero animado
-    let start=Date.now(),dur=2000;
-    function anim(){let p=Math.min(1,(Date.now()-start)/dur);document.getElementById("monedero").textContent=(euros*p).toFixed(2)+"€";if(p<1)requestAnimationFrame(anim);}
-    anim();
+      part.textContent=labels[i];el.appendChild(part);}
   }
 
-  // CONFIRMACION
-  function initConfirm(){
-    const ahorro=Math.min(euros,precioSel).toFixed(2);
-    const pagar=(precioSel-euros>0?(precioSel-euros):0).toFixed(2);
-    document.getElementById("resumen").innerHTML=`
-      <div class="opcion">Opción: ${actividadSel}</div>
-      <div class="ahorro">Ahorras: ${ahorro}€</div>
-      <div class="pagar">A pagar: ${pagar}€</div>`;
-    // contador
-    let segundos=300;function tick(){let m=Math.floor(segundos/60),s=segundos%60;document.getElementById("contador").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;if(segundos>0){segundos--;setTimeout(tick,1000);}}tick();
-    document.getElementById("fecha").min=new Date().toISOString().split("T")[0];
+  function showPrize(prize){
+    const ov=document.createElement("div");ov.className="overlay";
+    ov.innerHTML=`<div class="bigbox">
+      <div style="font-size:26px;font-weight:900;color:#b91c1c;margin-bottom:12px">¡PREMIO OBTENIDO!</div>
+      <div style="font-size:38px;font-weight:900;color:#111;margin:20px 0">${prize}€</div>
+      <div><a href="reserva.html" class="btn-red">Siguiente ➜</a></div>
+    </div>`;
+    document.body.appendChild(ov);
   }
+
+  // Init
+  setStats();setProgress();screenCards();
 })();
 </script>
 </body>
 </html>
+
+
