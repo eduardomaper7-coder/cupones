@@ -36,7 +36,7 @@
   <h1>Confirmar reserva</h1>
   <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
   <div class="resumen" id="resumen"></div>
-  <form id="form">
+  <form id="form" method="POST" action="https://script.google.com/macros/s/AKfycbygq8ziVVaW9kY_ReeCUDltek5uBerH2zGu-J8b5TrKEDZd5Ntwf06sBie0NjDZKVXzgw/exec" target="hidden_iframe">
     <label>Elige día</label><input type="date" id="fecha" name="fecha" required>
     <label>Elige hora</label><input type="time" id="hora" name="hora" required>
     <label>Nombre</label><input type="text" name="nombre" required>
@@ -44,11 +44,11 @@
     <label>Teléfono (Te enviaremos por WhatsApp tus premios)</label><input type="tel" name="telefono" required>
     <button type="submit" class="btn btn-red">Confirmar reserva</button>
   </form>
+  <iframe name="hidden_iframe" style="display:none;"></iframe>
 </div>
 
 <script>
 (function(){
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbygq8ziVVaW9kY_ReeCUDltek5uBerH2zGu-J8b5TrKEDZd5Ntwf06sBie0NjDZKVXzgw/exec";
   const euros = 7; // siempre 7 €
   let actividadSel=null, precioSel=0;
 
@@ -97,55 +97,20 @@
       <div class="opcion">Opción: ${actividadSel}</div>
       <div class="ahorro">Ahorras: ${ahorro}€</div>
       <div class="pagar">A pagar: ${pagar}€</div>`;
+
     let segundos=300;
     function tick(){
-      let m=Math.floor(segundos/60), s=segundos%60;
+      let m=Math.floor(segundos/60),s=segundos%60;
       document.getElementById("contador").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-      if(segundos>0){segundos--; setTimeout(tick,1000);}
+      if(segundos>0){segundos--;setTimeout(tick,1000);}
     }
     tick();
     document.getElementById("fecha").min=new Date().toISOString().split("T")[0];
   }
 
-  document.getElementById("form").addEventListener("submit", function(e){
-    e.preventDefault();
-    const data = {
-      fecha: document.getElementById("fecha").value,
-      hora: document.getElementById("hora").value,
-      actividad: actividadSel,
-      nombre: this.nombre.value,
-      apellidos: this.apellidos.value,
-      telefono: this.telefono.value
-    };
-
-    const iframe = document.createElement("iframe");
-    iframe.name = "gasTarget";
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-
-    const form = document.createElement("form");
-    form.action = GAS_URL;
-    form.method = "POST";
-    form.target = "gasTarget";
-    form.style.display = "none";
-
-    Object.entries(data).forEach(([k,v])=>{
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = k;
-      input.value = v;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-
-    iframe.onload = function() {
-      alert("✅ Reserva guardada en Google Sheets");
-      setTimeout(()=>{ form.remove(); iframe.remove(); }, 0);
-    };
-
-    form.submit();
-  });
+  // Cuando el iframe cargue (respuesta del GAS)
+  const iframe=document.querySelector("iframe[name=hidden_iframe]");
+  iframe.addEventListener("load",()=>{ alert("✅ Reserva guardada en Google Sheets"); });
 
   initReserva();
 })();
