@@ -44,14 +44,14 @@
     <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
     <div class="resumen" id="resumen"></div>
 
-    <!-- ⚠️ Aquí ya usamos el endpoint de SheetDB -->
+    <!-- ⚠️ Endpoint de SheetDB -->
     <form id="form"
           method="POST"
           action="https://sheetdb.io/api/v1/55rfkpm3ogg4g"
           target="hidden_iframe">
       <input type="hidden" name="data[actividad]" id="actividad">
 
-      <!-- ✅ Campo de centro deportivo (readonly + hidden para enviar a Sheets) -->
+      <!-- ✅ Campo de centro deportivo -->
       <label for="centro">Centro deportivo más cercano</label>
       <input type="text" id="centro" value="Centro de ocio El Horno" readonly 
              style="font-weight:700; color:#333; background:#eee;">
@@ -65,8 +65,8 @@
       <input type="text" name="data[nombre]" required>
       <label>Apellidos</label>
       <input type="text" name="data[apellidos]" required>
-      <label>Teléfono (Te enviaremos por WhatsApp tus premios)</label>
-      <input type="tel" name="data[telefono]" required>
+      <label>Correo electrónico</label>
+      <input type="email" name="data[correo]" required>
       <button type="submit">Confirmar reserva</button>
     </form>
     <iframe name="hidden_iframe" style="display:none;"></iframe>
