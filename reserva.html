@@ -51,7 +51,6 @@
           target="hidden_iframe">
       <input type="hidden" name="data[actividad]" id="actividad">
 
-      <!-- ✅ Campo de centro deportivo -->
       <label for="centro">Centro deportivo más cercano</label>
       <input type="text" id="centro" value="Centro de ocio El Horno" readonly 
              style="font-weight:700; color:#333; background:#eee;">
@@ -59,14 +58,19 @@
 
       <label>Elige día</label>
       <input type="date" id="fecha" name="data[fecha]" required>
+
       <label>Elige hora</label>
       <input type="time" id="hora" name="data[hora]" required>
+
       <label>Nombre</label>
       <input type="text" name="data[nombre]" required>
+
       <label>Apellidos</label>
       <input type="text" name="data[apellidos]" required>
-      <label>Correo electrónico</label>
+
+      <label>Correo</label>
       <input type="email" name="data[correo]" required>
+
       <button type="submit">Confirmar reserva</button>
     </form>
     <iframe name="hidden_iframe" style="display:none;"></iframe>
@@ -174,6 +178,7 @@
 </script>
 </body>
 </html>
+
 
 
 
