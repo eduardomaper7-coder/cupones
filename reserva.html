@@ -68,11 +68,8 @@
       <label>Apellidos</label>
       <input type="text" name="data[apellidos]" required>
 
-      <label>Correo</label>
-      <!-- Campo visible para el usuario -->
-      <input type="email" id="correoVisible" placeholder="tu@correo.com" required>
-      <!-- Campo oculto que realmente se envía a la hoja -->
-      <input type="hidden" id="correoOculto" name="data[correo]">
+      <label>Correo electrónico</label>
+      <input type="email" name="data[correo]" required>
 
       <button type="submit">Confirmar reserva</button>
     </form>
@@ -154,10 +151,6 @@
     // Validación antes de enviar
     const form=document.getElementById("form");
     form.onsubmit=function(e){
-      // Copiar el correo visible al campo oculto
-      const correo = document.getElementById("correoVisible").value.trim();
-      document.getElementById("correoOculto").value = correo;
-
       const f=new Date(fecha.value+"T"+document.getElementById("hora").value);
       const dia=f.getDay();
       const hora=f.getHours(), min=f.getMinutes();
