@@ -141,8 +141,8 @@
         root.querySelector("#msg").textContent="¡Has conseguido un pase!";
         setTimeout(()=>launchConfetti(),1200);
 
-        // Premio entre 1 y 5 €
-        const cartaPremio = Math.floor(Math.random() * 5) + 1;
+        // Premio fijo de 2 €
+        const cartaPremio = 2;
         setTimeout(()=>popupCount("€ ganados",cartaPremio,"€",()=>popupCount("Coins",1000,"",()=>{
           state.euros=cartaPremio;state.coins=1000;setStats();root.querySelector("#next").disabled=false;})),2000);
       });
@@ -164,19 +164,11 @@
     let spinning=false;
     spinBtn.addEventListener("click",()=>{
       if(spinning||state.coins<500)return alert("No tienes coins suficientes");
-      state.coins-=500;setStats(); // solo bajamos coins ahora
+      state.coins-=500;setStats();
       spinning=true;
 
-      let premioReal;
-      if(state.euros===5){
-        premioReal=2; // regla especial si tiene 5 € de cartas
-      } else {
-        const minNecesario = 5.50 - state.euros;
-        const maxNecesario = 7.00 - state.euros;
-        let posibles = PRIZES.map(p => parseInt(p)).filter(v => v >= minNecesario && v <= maxNecesario);
-        if(posibles.length===0) posibles=[2];
-        premioReal = posibles[Math.floor(Math.random()*posibles.length)];
-      }
+      // Premio fijo de 5 €
+      let premioReal = 5;
 
       const idx = PRIZES.findIndex(p => parseInt(p) === premioReal);
 
@@ -194,7 +186,7 @@
 
       function done(){
         spinning=false;
-        state.euros += premioReal; // ✅ solo aquí actualizamos los €
+        state.euros += premioReal;
         setStats();
         showPrize(premioReal);
       }
