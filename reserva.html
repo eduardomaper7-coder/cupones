@@ -17,14 +17,29 @@
     .reservar-caja{background:#dc2626;color:#fff}
     .monedero{text-align:center;margin-top:30px;font-size:20px;font-weight:900;color:#facc15}
     .hidden{display:none}
+
+    /* Confirmación (previa) */
+    .contador-box{text-align:center;border:3px solid #facc15;padding:12px;border-radius:12px;margin:20px auto;width:180px;background:#1f1f1f;box-shadow:0 0 10px rgba(250,204,21,.5)}
+    .contador{font-size:32px;color:#facc15;font-weight:900}
+    .resumen{text-align:center;margin:20px 0}
+    .opcion{font-size:24px;font-weight:900;margin-bottom:12px;color:#fff}
+    .ahorro{font-size:22px;font-weight:900;color:#facc15;margin-bottom:8px}
+    .pagar{font-size:20px;font-weight:700;color:#fff}
+
     label{display:block;margin:10px 0 4px}
     input{width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:12px}
+    /* Más espacio respecto al botón */
+    input[type="email"]{margin-bottom:16px}
     button{padding:12px 24px;font-weight:900;background:#e11d48;color:#fff;border:none;border-radius:20px;cursor:pointer;margin-top:16px}
+
+    /* Errores bajo los campos */
+    .error-msg{color:#e11d48;font-size:12px;margin-top:-6px;margin-bottom:12px;display:none}
+
+    /* Pantalla final bonita */
     .confirmacion-final{text-align:center;margin-top:60px;padding:30px;border:2px solid #22c55e;border-radius:16px;background:#1f1f1f;box-shadow:0 0 15px rgba(34,197,94,.4)}
     .confirmacion-final h1{font-size:24px;color:#22c55e;margin-bottom:16px}
     .confirmacion-final p{margin:8px 0;font-size:16px}
     .confirmacion-final .small{font-size:12px;color:#ccc;margin-top:12px}
-    .error-msg{color:#e11d48;font-size:12px;margin-bottom:12px;display:none}
   </style>
 </head>
 <body>
@@ -39,7 +54,11 @@
 
   <!-- Pantalla 2: CONFIRMACIÓN -->
   <div id="screen-confirmacion" class="hidden">
-    <h1>Confirmar reserva</h1>
+    <h1 id="title-confirmacion">Confirmar reserva</h1>
+
+    <!-- Contador y resumen (visibles en la pantalla de confirmar) -->
+    <div class="contador-box"><div class="contador" id="contador">05:00</div></div>
+    <div class="resumen" id="resumen"></div>
 
     <form id="form"
           method="POST"
@@ -73,7 +92,7 @@
     </form>
     <iframe name="hidden_iframe" style="display:none;"></iframe>
 
-    <!-- Mensaje de confirmación -->
+    <!-- Pantalla final (solo mensajes bonitos) -->
     <div id="confirmacion-final" class="hidden confirmacion-final">
       <h1>✅ Reserva confirmada con éxito</h1>
       <p>Le enviaremos su pase de acceso al correo.</p>
@@ -119,12 +138,39 @@
     lista.appendChild(div);
   });
 
+  let timerId=null;
+
   function goToConfirm(act){
     document.getElementById("screen-reserva").classList.add("hidden");
     document.getElementById("screen-confirmacion").classList.remove("hidden");
 
+    const precio=act.precio;
+    const ganado=totalGanado;
+    const ahorro=Math.min(ganado,precio).toFixed(2);
+    const pagar=(precio-ganado>0?(precio-ganado):0).toFixed(2);
+
+    // Resumen visible en la pantalla de confirmar
+    document.getElementById("resumen").innerHTML=`
+      <div class="opcion">Opción: ${act.nombre}</div>
+      <div class="ahorro">Ahorras: ${ahorro}€</div>
+      <div class="pagar">A pagar: ${pagar}€</div>
+    `;
+
     // Rellenar actividad en campo oculto
     document.getElementById("actividad").value = act.nombre;
+
+    // Contador 5 min
+    let segundos=300;
+    (function tick(){
+      let m=Math.floor(segundos/60);
+      let s=segundos%60;
+      document.getElementById("contador").textContent=
+        `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+      if(segundos>0){
+        segundos--;
+        timerId=setTimeout(tick,1000);
+      }
+    })();
 
     // Fecha min/max
     const fecha=document.getElementById("fecha");
@@ -134,7 +180,7 @@
     fecha.min=hoy.toISOString().split("T")[0];
     fecha.max=max.toISOString().split("T")[0];
 
-    // Validación antes de enviar
+    // Validación y envío
     const form=document.getElementById("form");
     form.onsubmit=function(e){
       e.preventDefault();
@@ -143,7 +189,21 @@
       document.getElementById("error-fecha").style.display="none";
       document.getElementById("error-hora").style.display="none";
 
-      const f=new Date(fecha.value+"T"+document.getElementById("hora").value);
+      const horaEl=document.getElementById("hora");
+
+      // Validar que haya valores
+      if(!fecha.value){
+        document.getElementById("error-fecha").textContent="Seleccione una fecha";
+        document.getElementById("error-fecha").style.display="block";
+        return;
+      }
+      if(!horaEl.value){
+        document.getElementById("error-hora").textContent="Seleccione una hora";
+        document.getElementById("error-hora").style.display="block";
+        return;
+      }
+
+      const f=new Date(fecha.value+"T"+horaEl.value);
       const dia=f.getDay();
       const hora=f.getHours(), min=f.getMinutes();
       let valido=false;
@@ -158,15 +218,22 @@
         return;
       }
       if(!valido){
+        document.getElementById("error-hora").textContent="Hora no disponible";
         document.getElementById("error-hora").style.display="block";
         return;
       }
 
-      // Enviar al backend (sigue usando el form con iframe oculto)
+      // Enviar al backend (iframe oculto) sin mostrar mensajes de Sheets
       form.submit();
 
-      // Mostrar confirmación final
+      // Ocultar elementos de la pantalla de confirmar
+      clearTimeout(timerId);
+      document.getElementById("title-confirmacion").classList.add("hidden");
       form.classList.add("hidden");
+      document.querySelector(".contador-box").classList.add("hidden");
+      document.getElementById("resumen").classList.add("hidden");
+
+      // Mostrar solo la pantalla final bonita
       document.getElementById("confirmacion-final").classList.remove("hidden");
     };
   }
@@ -174,6 +241,7 @@
 </script>
 </body>
 </html>
+
 
 
 
